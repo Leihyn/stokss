@@ -42,7 +42,7 @@
     "binding_gate": "mainnet dividend-harvest path live by end of Mon 15 Sep, ahead of expected STRCx tick ~14-15 Sep"
   },
   "pipeline": {
-    "current_phase": "critique",
+    "current_phase": "url_preverify",
     "phases": {
       "intel": {
         "status": "complete",
@@ -61,9 +61,9 @@
         "completed_at": "2026-09-12T09:03:32.538402+00:00"
       },
       "critique": {
-        "status": "running",
+        "status": "complete",
         "dispatched_at": "2026-09-12T09:03:48.882483+00:00",
-        "completed_at": null
+        "completed_at": "2026-09-12T11:07:35.889312+00:00"
       },
       "url_preverify": {
         "status": "pending",
@@ -155,6 +155,9 @@
       "state_path": "/Users/machine/Desktop/dev/stokss/.forge-state.json",
       "env_example_path": "/Users/machine/Desktop/dev/stokss/.env.example",
       "observables_path": "/Users/machine/Desktop/dev/stokss/FEATURE-OBSERVABLES.md"
+    },
+    "critique": {
+      "state_path": "/Users/machine/Desktop/dev/stokss/.critique-state.json"
     }
   },
   "credentials_location": "~/.claude/credentials/pipeline-credentials.env",
@@ -180,7 +183,7 @@
     "idea_selection": {
       "answered": true,
       "answered_at": "2026-09-12T08:19:01.107788+00:00",
-      "idea": "stokss — dividend harvest on Token-2022 scaled-UI multiplier ticks, queued until the US market open, payout to wallet or bill",
+      "idea": "stokss \u2014 dividend harvest on Token-2022 scaled-UI multiplier ticks, queued until the US market open, payout to wallet or bill",
       "modification": "ADD BUY FRONT DOOR: one-click Jupiter buy for dividend-paying xStocks so the app is a destination, not a wallet utility (~3h, makes the demo a full loop)",
       "name": "stokss",
       "name_rationale": "user-chosen; replaces working title Coupon, which collides with discount-voucher reading"
@@ -200,12 +203,12 @@
   "continuation_manifest": {
     "continuation_count": 0,
     "max_continuations": 5,
-    "last_completed_phase": "forge",
-    "next_expected_phase": "critique",
+    "last_completed_phase": "critique",
+    "next_expected_phase": "url_preverify",
     "spawned_at": "2026-09-12T08:15:15.528400+00:00"
   },
   "created_at": "2026-09-12T08:15:15.528400+00:00",
-  "updated_at": "2026-09-12T09:03:48.882483+00:00",
+  "updated_at": "2026-09-12T11:07:35.889312+00:00",
   "intelState": {
     "status": "complete",
     "sourceCount": 21,
@@ -221,7 +224,7 @@
   "warroomState": {
     "source": "ideate",
     "winner_brief": "/Users/machine/Desktop/dev/stokss/warroom/WINNER-BRIEF.md",
-    "winner": "stokss — sell the xStocks multiplier increment at the next market open and route the cash to the holder"
+    "winner": "stokss \u2014 sell the xStocks multiplier increment at the next market open and route the cash to the holder"
   },
   "forgeState": {
     "status": "complete",
@@ -246,7 +249,24 @@
       "verdict": "AGREE"
     }
   },
-  "critiqueState": null,
+  "critiqueState": {
+    "status": "complete",
+    "findings": 9,
+    "high": 4,
+    "medium": 3,
+    "low": 2,
+    "fixed_in_place": 7,
+    "routed_downstream": [
+      "D-14",
+      "D-15",
+      "D-16"
+    ],
+    "conductor_amended": [
+      "C-1 threshold 1.02 -> 1.03, verified against 570 real dividend events"
+    ],
+    "earlier_run": "stalled after E-1..E-5; those 5 were applied and are committed",
+    "verdict": "Sunday 13 Sep gate unreachable. Monday 14 Sep 22:00 UTC binds, with 4 cuts taken as defaults."
+  },
   "buildState": null,
   "debugState": null,
   "wireState": null,
@@ -263,10 +283,6 @@
   "demoRehearsalState": null,
   "builder_profile": null,
   "retry_ledger": {
-    "critique": {
-      "blocked_retries": {
-        "external": 1
-      }
-    }
+    "critique": {}
   }
 }

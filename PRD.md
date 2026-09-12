@@ -177,8 +177,22 @@ The organizers ask one question: *could this be a real app that people will actu
 ### F4: Payout settled to the wallet
 
 1. `settlement-engine` aggregates `pending_raw` across all plans on the mint.
-2. If the aggregate is worth less than the payout floor, it waits and accrues to the next tick.
+2. If the aggregate is worth less than **`MIN_SWAP_USD`** (the swap-economics floor, not the
+   payout floor), it waits and accrues to the next tick. Otherwise it swaps and calls `settle`
+   for every plan in the batch, including the plans whose own share is below the payout floor.
+   Those accrue on-chain in `accrued_usdc` and pay out on a later `settle`.
 3. Above the floor, it takes one Jupiter quote and executes one swap for the whole batch.
+
+<!-- [CRITIQUE C-2] Step 2 previously read "if the aggregate is worth less than the payout
+     floor, it waits", which collided with the payout floor already implemented on-chain in
+     settle. Two floors, one in the crank and one in the program, and only one of them can be
+     operative. If the crank holds, settle is never called and `accrued_usdc` is dead code; if
+     the crank swaps every tick, DT-4's "raise MIN_SWAP_USD" remedy does nothing. They are now
+     two DIFFERENT thresholds doing two different jobs:
+       MIN_SWAP_USD ($0.50, crank)  - is this batch worth one Jupiter round trip?
+       payout_floor_usdc ($1.00, program) - is this holder's share worth one USDC transfer?
+     The batch clears the first; the individual plan clears the second. -->
+
 4. It calls `settle` per plan with that plan's pro-rata share of the USDC received.
 5. The program transfers USDC to the plan's destination and writes a `HarvestReceipt` with the tick, the delta, the price achieved, and the amount paid.
 6. The app's receipts feed updates.
@@ -559,14 +573,23 @@ Today is Saturday 12 September. The deadline is Friday 18 September 20:00 UTC. S
 | Dependency | Type | Status | Needed by |
 |---|---|---|---|
 | Paid Solana RPC (Helius or Triton) | Service | **Not provisioned** | Sat 12 Sep |
-| Funded keeper keypair (mainnet, ~0.5 SOL) | Account | **Not created** | Mon 14 Sep |
-| Funded demo wallet (~$60 SOL + xStocks) | Account | **Not funded**, user confirmed they will | Mon 14 Sep |
+| Funded **deploy authority** (mainnet, ~3.5 SOL, NOT the keeper) | Account | **Not funded** | **Sat 12 Sep, start first** |
+| Funded keeper keypair (mainnet, ~0.5 SOL) | Account | **Not created** | Sat 12 Sep |
+| Funded demo wallet (~$60 SOL + xStocks) | Account | **Not funded**, user confirmed they will | Sat 12 Sep |
 | Devnet Token-2022 mint with scaled UI config | Test fixture | Created by `scripts/create-devnet-mint.ts` | Sun 13 Sep |
 | Production hosting with no cold sleep | Service | Not chosen | Wed 16 Sep |
 | Anchor 0.30.1, Rust 1.86, Node 25, pnpm, bun | Toolchain | **Verified installed** | now |
 | `spl-token` CLI 5.4.0 with `update-ui-amount-multiplier` | Toolchain | **Verified installed** | Sun 13 Sep |
 
+<!-- [CRITIQUE C-3 / C-7] Three rows said "Needed by Mon 14 Sep" while the Phase 0 gate in
+     PLAN.md requires all of them funded before leaving Saturday. Two documents, two dates,
+     for the prerequisites of the one deadline that matters. They are Saturday items. The
+     deploy authority row was missing entirely here even after E-3 added Task 0.5, and it is
+     the row with the longest lead time, so it goes first in both the table and the steps. -->
 **Manual setup steps**
+0. **Start first:** send ~4.5 SOL to mainnet (3.5 deploy authority, 0.5 keeper, the rest demo).
+   Nothing else in Phase 0 takes more than minutes; this is the only step that can take hours,
+   and it gates Monday's deploy.
 1. Create and fund the keeper keypair, record its pubkey in `.env`
 2. Create and fund the demo wallet, buy KOx / MCDx / STRCx through Jupiter
 3. Obtain a paid RPC URL
@@ -581,7 +604,7 @@ Today is Saturday 12 September. The deadline is Friday 18 September 20:00 UTC. S
 |---|:---:|---|
 | Real mainnet tick harvested end to end with an explorer link | [C] | Demo Scene 5 and Section 7.6. The whole build order in Section 8 exists to make the Monday gate. |
 | Mainnet harvest path live, armed and enrolled by Sun 13 Sep EOD (hard stop Mon 14 Sep 22:00 UTC) | [C] | Section 8 makes Monday 14 Sep the gate day and names what gets cut to protect it. R8 and DT-8. <!-- [CRITIQUE E-2] date corrected: "Monday 15 Sep" is a Tuesday. --> |
-| Program provably cannot move more than the increment | [C] | Holds for the harvest leg: Section 4.1, delta recomputed on-chain, no caller amount, capped delegate. **Does NOT hold for settle**, which takes the payout amount from the keeper, stated openly in ARCHITECTURE.md Section 17 "What the bound actually is" and in Scene 3 rather than claimed away. The bound that does hold: the keeper can misroute a dividend, capped at 5% of position by the delegate; it can never move the position. R13. |
+| Program provably cannot move more than the increment | [C] | Holds for the harvest leg: Section 4.1, delta recomputed on-chain, no caller amount, capped delegate, **and since the critique pass an on-chain ceiling of `m1 <= m0 * 1.02` so a forward split or administrative correction cannot be harvested as if it were a dividend** (ARCHITECTURE.md Section 6 and Section 17 Layer 5). Before that ceiling, "only the increment" was enforced only in direction, not magnitude, and any non-dividend bump up to 5.26% would have executed in full. **Does NOT hold for settle**, which takes the payout amount from the keeper, stated openly in ARCHITECTURE.md Section 17 "What the bound actually is" and in Scene 3 rather than claimed away. The bound that does hold: the keeper can misroute a dividend, capped at 5% of position by the delegate; it can never move the position. R13, DT-13 point 2b. |
 | Every link resolves on 2 October | [C] | Section 9 requires hosting with no cold sleep. R14 and DT-14. The submission checklist has a weekly link check. |
 | Delta computed in RAW units | [C] | Section 4.1 and Section 5 A2 both state raw. R2 mitigation includes a unit test against four real historical ticks. |
 | Accrual floor and cross-user batching | [I] | Section 4.4: one swap per mint per tick, not per user. Section 3 F4 step 2 holds below the floor. |

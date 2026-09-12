@@ -14,7 +14,7 @@
 | Deadline | 2026-09-18 20:00 UTC |
 | Build days | 6 (Sat 12 through Thu 17). Friday is submission day. |
 | Total estimated | 5.75 days |
-| Binding internal gate | **Mainnet crank armed and STRCx enrolled by Sun 13 Sep end of day. HARD STOP Mon 14 Sep 22:00 UTC.** <!-- [CRITIQUE E-2] was "end of Monday 15 Sep": 15 Sep 2026 is a TUESDAY. Monday is the 14th, and Aug 30 + 15d puts the expected STRCx tick on Mon 14 Sep, activating ~23:00-00:30 UTC. The old gate landed AFTER the event it exists to catch. --> |
+| Binding internal gate | **Mainnet crank armed and STRCx enrolled: HARD STOP Mon 14 Sep 22:00 UTC.** Sun 13 Sep 20:00 UTC is the CHECKPOINT that triggers the cut list, not a second gate. <!-- [CRITIQUE E-2] was "end of Monday 15 Sep": 15 Sep 2026 is a TUESDAY. Monday is the 14th, and Aug 30 + 15d puts the expected STRCx tick on Mon 14 Sep, activating ~23:00-00:30 UTC. The old gate landed AFTER the event it exists to catch. --> <!-- [CRITIQUE C-3] The E-2 fix wrote "Sun 13 Sep end of day" here and in concerns.md but left Section 2 and the Phase 5 header reading "Mon 14 Sep, done by 22:00 UTC". Two gates one day apart in one document, and a builder working top to bottom follows the phase schedule. One gate now: Monday 22:00 UTC. Sunday is a checkpoint with teeth (see C-4 cut list below), which is what the Sunday date was actually for. --> |
 | Why that gate | STRCx has ticked every ~15 days (Jun 30, Jul 15, Jul 31, Aug 14, Aug 30). Next expected 14-15 Sep, with $335k liquidity. Capturing that real tick is the primary demo objective. |
 
 ### How to use this plan
@@ -31,6 +31,33 @@ When something fails, find the decision tree for it rather than improvising. The
 4. Design pass (Phase 9)
 
 **Never cut:** Phases 1 through 5. That is the mechanic and the mainnet gate.
+
+<!-- [CRITIQUE C-4] Added. Phases 0 through 5 total 3.0 estimated days against roughly 1.5
+     calendar days to Sunday, and the repository currently contains no code at all: no
+     Anchor.toml, no programs/, no crank/, no web/, and all five Phase 0 tasks undone. The
+     cut list above only starts biting at Phase 7, which is Tuesday. That is too late to
+     protect a Monday gate. These four cuts are taken NOW, not held in reserve. -->
+### Cuts taken now to protect the Monday gate, not held in reserve
+
+These are not contingencies. Apply them from the first commit.
+
+1. **No web work before the mainnet crank logs a tick-watcher line.** Phase 6 depends only on
+   Phase 2, so it is startable on Sunday and it is the single most likely thing to eat the
+   gate. DT-8 already says "stop all web work immediately", but only as a remedy after the
+   gate is already at risk. It is the default instead.
+2. **Build five instructions, not six.** `close_plan` ships Tuesday. DT-8 already authorises
+   this as a remedy; the Phase 2 gate contradicted it by requiring all six in the IDL. Fixed
+   there too.
+3. **Task 5.3 buys STRCx only.** KOx and MCDx are demo-wallet dressing, not gate items. Buy
+   them Tuesday. Three Jupiter round trips at the worst hour of the week is three chances to
+   fail for no gate benefit.
+4. **Phase 4 (devnet rehearsal) is the designated sacrifice.** If it is not green by Sun 13
+   Sep 20:00 UTC, skip it and rehearse on mainnet with a $5 position. Phase 5 already says
+   this; ARCHITECTURE.md Section 24 contradicted it by declaring devnet "must be green before
+   row 5". Fixed there too.
+
+**What is NOT compressible by working faster:** sourcing ~4.5 SOL to mainnet (Task 0.5) and
+provisioning a paid RPC (Task 0.3). Both are wall-clock. Start them before writing any code.
 
 ---
 
@@ -53,6 +80,15 @@ When something fails, find the decision tree for it rather than improvising. The
 ---
 
 ## Phase 0: Environment and accounts (0.25d)
+
+<!-- [CRITIQUE C-7] E-3 added Task 0.5 but left it at position five. Every other Phase 0 task
+     is minutes of local work; that one can consume a day and it is the one gating Monday's
+     deploy. Its own text names exchange KYC latency as the failure mode. Ordering matters
+     more than the task existing. -->
+> **Do Task 0.5 first, before `anchor init`.** It is the only item in this project with a lead
+> time measured in hours rather than minutes: ~4.5 SOL has to actually arrive on mainnet, and
+> nothing about writing code makes that go faster. Start the transfer, then come back to
+> Task 0.1 while it settles. Tasks 0.1 through 0.4 all run fine with the transfer in flight.
 
 ### Task 0.1: Create the repository skeleton
 
@@ -174,12 +210,21 @@ cargo test -p stokss --lib scaled_ui
 
 Expected:
 ```
-running 4 tests
+running 6 tests
+test scaled_ui::tests::aaplx_tick_delta_is_exactly_602_834 ... ok
 test scaled_ui::tests::delta_preserves_scaled_exposure ... ok
+test scaled_ui::tests::forward_split_is_rejected ... ok
 test scaled_ui::tests::no_tick_means_no_delta ... ok
 test scaled_ui::tests::reverse_split_is_rejected ... ok
 test scaled_ui::tests::zero_balance_is_zero_delta ... ok
 ```
+
+<!-- [CRITIQUE C-1 / C-8c] Two tests added, both cheap and both closing a real hole.
+     `forward_split_is_rejected`: the suite tested only the reverse split, which made the
+     split case LOOK handled. A forward split raises the multiplier and would have sold real
+     shares up to the delegate cap. `aaplx_tick_delta_is_exactly_602_834`: E-1 was a
+     hand-computed constant that no test ever asserted. It does now. -->
+
 
 If any test fails, stop. Nothing downstream is worth building on a broken delta.
 
@@ -202,7 +247,7 @@ Expected: a 678-byte file. Add a test that loads those bytes and asserts `parse_
 cargo test -p stokss --lib scaled_ui
 ```
 
-Expected: 5 tests pass.
+Expected: 7 tests pass.
 
 Commit: `test(program): parser verified against the live AAPLx mint fixture`
 
@@ -251,10 +296,11 @@ rewriting correct code to reproduce an arithmetic typo.
 
 ### Phase 1 gate
 
-- [ ] `cargo test -p stokss --lib scaled_ui` passes 5 of 5
+- [ ] `cargo test -p stokss --lib scaled_ui` passes 7 of 7
 - [ ] The parser returns the exact multipliers from ARCHITECTURE.md Section 3 for the real AAPLx fixture
 - [ ] `cargo build -p stokss` is clean
 - [ ] [C] concern "delta computed in RAW units" is verified by a passing test, not by inspection
+- [ ] A forward split is rejected on-chain, not only by the crank's reason label (C-1)
 
 ---
 
@@ -356,7 +402,7 @@ Expected: clean build.
 ### Phase 2 gate
 
 - [ ] `anchor build` clean
-- [ ] `target/idl/stokss.json` lists all six instructions
+- [ ] `target/idl/stokss.json` lists at least the five gate instructions: `initializeConfig`, `enroll`, `harvest`, `settle`, `setPaused`. <!-- [CRITIQUE C-3] was "all six instructions", which contradicted DT-8's instruction to skip `close_plan` to make the gate. `close_plan` ships Tuesday. -->
 - [ ] `anchor test --skip-deploy` passes the delta suite
 - [ ] Program ID recorded in `.env` in both variables
 - [ ] `harvest` takes no amount argument anywhere in the IDL
@@ -982,11 +1028,23 @@ Trigger: a judge says stokss is one mechanic rather than a product.
 
 **Do not argue that it is bigger than it looks.** It is one mechanic, deliberately.
 
-1. Point at the rules text: "Pick one wedge and make it excellent." A single mechanic is what
-   this event asked for, so the objection is aimed at the brief, not at us.
-2. Then show the front door. Income stocks ranked by dividends measured on-chain, buy in one
-   click, enroll on success. That makes it a place you keep your income stocks, not a utility
-   bolted to a wallet.
+<!-- [CRITIQUE C-6] The old step 1 quoted the rules back and concluded "the objection is
+     aimed at the brief, not at us". That is a rationalization, not an answer: judges wrote
+     the rubric and know what "pick one wedge" meant, and it did not mean "one instruction is
+     a product". It also breaks this tree's own opening instruction. Worse, the only
+     substantive answer left was the front door, which is item 2 on the cut list and lives in
+     a phase titled FIRST TO CUT. If Phase 8 is cut as planned, the tree had a rationalization
+     and a generic appeal and nothing else. The new step 1 survives every cut. -->
+1. **Lead with the clock.** A feature runs when you click it. stokss runs when nobody is
+   watching: the crank sat on mainnet through the weekend, saw a corporate action nobody
+   triggered, waited for the US open because selling into a shut book is worse for the
+   holder, sold exactly the increment and wrote a receipt. Recurring autonomous per-user
+   execution with on-chain receipts is a service with a clock, not a button. This answer is
+   checkable in the explorer and it does not depend on anything that can be cut.
+2. Then show the front door, **if it shipped.** Income stocks ranked by dividends measured
+   on-chain, buy in one click, enroll on success. That makes it a place you keep your income
+   stocks, not a utility bolted to a wallet. If it was cut, do not mention it; step 1 already
+   carried the argument.
 3. If they still push: the honest answer is that a product which does one thing correctly with
    real money on mainnet beats four things that only work in a recording.
 
@@ -1000,10 +1058,26 @@ Trigger: a judge argues DRIP is a feature and cash is worse.
    owe cash on money you cannot spend. That is a liability, not a taste.
 2. Second, optionality. Reinvesting into the same stock is a concentration decision an issuer
    made for you. stokss gives the choice back: cash, another asset, or a bill.
-3. Third, and only if pressed: you can still reinvest. Point the destination at the same stock
-   and stokss does nothing, which is exactly today's behaviour. We are adding a switch, not
-   removing one.
-4. Never quote a yield percentage as the pitch. It is about 1% blended and it is not the point.
+<!-- [CRITIQUE C-5] The old step 3 read: "you can still reinvest. Point the destination at the
+     same stock and stokss does nothing, which is exactly today's behaviour." False twice
+     over, and falsifiable by opening one file. `settle`'s destination is an
+     InterfaceAccount<TokenAccount> at `plan.destination` and the only transfer it makes is
+     `transfer_checked` on `usdc_mint`; PayoutMode is Cash | Redirect | Bill and none of them
+     route back into the stock. And even if one did, stokss would not "do nothing": it would
+     harvest, swap to USDC paying Jupiter spread, then swap back. Two spreads and a forced
+     disposal is strictly worse than leaving it alone. Do not offer a judge a parity claim
+     they can break in thirty seconds, especially in the tree whose whole case is credibility
+     about tax. -->
+3. Third: **opt out per position.** Do not enroll that holding, or close the plan and revoke
+   in one transaction, and you are back to exactly today's behaviour. That is a switch we
+   added, not one we removed, and unlike a reinvest destination it is actually implemented.
+4. **When they raise double taxation, and they will:** yes, selling the increment is itself a
+   disposal. It is a disposal at a near-zero basis delta, because you sell the increment on
+   the day you receive it, so the capital gain rounds to nothing. What it produces is the cash
+   to pay the income tax you already owed on a distribution you never received. One event you
+   cannot fund becomes two events, one of which funds the other. Have this ready; it is the
+   first thing anyone who actually does tax will say, and the tree leads with tax.
+5. Never quote a yield percentage as the pitch. It is about 1% blended and it is not the point.
    Quoting it is a drift tripwire in the thesis.
 
 ### Decision Point DT-11: another submission shipped the same mechanic (PRD risk R11, LOW)
@@ -1024,6 +1098,15 @@ Trigger: a judge or user notices the increment passes through a keeper-held acco
    state and the holder's balance. `harvest` takes no amount argument; check the IDL.
 2. Then the second bound: the delegate is capped at roughly 5% of the position, enforced by the
    token program, not by us. Show it on screen with `spl-token display`.
+   <!-- [CRITIQUE C-1] Point 2b added. Without the ceiling, the delegate cap was the ONLY
+        enforced bound on how much a single harvest could move, and "we only take the
+        dividend" was an off-chain promise kept by the crank's reason label. A judge who
+        asks "what if it's a split, not a dividend" had no code answer. -->
+2b. Then the bound that makes the first two mean "dividend" rather than just "less than 5%":
+   `compute_delta_raw` requires `m0 < m1 <= m0 * 1.02`. A forward split or an administrative
+   correction falls outside that band and reverts on-chain, not in our crank. Every real tick
+   we measured is under 0.55%, so the ceiling clears them by about 4x. Say which layer holds
+   which bound: the token program caps the total, this program caps the shape.
 3. Then the honest limitation: between harvest and settle, the increment sits in a keeper
    account for minutes. That is a real trust assumption and we say so in `disclosures.md`.
 4. State the fix we did not build: an atomic route that swaps inside the same transaction, which

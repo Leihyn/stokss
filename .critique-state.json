@@ -1,0 +1,285 @@
+{
+  "skill": "hackathon-critique",
+  "working_dir": "/Users/machine/Desktop/dev/stokss",
+  "status": "complete",
+  "mode": "resume",
+  "run": "retry-2",
+  "started_at": "2026-09-12",
+  "autonomous_mode": true,
+  "carried_forward": {
+    "note": "Found and fixed by the previous (stalled) run. Not re-reported, not re-verified.",
+    "findings": [
+      {
+        "id": "E-1",
+        "status": "fixed",
+        "summary": "delta worked example read 602_956; true value 602_834."
+      },
+      {
+        "id": "E-2",
+        "status": "fixed",
+        "summary": "'Monday 15 Sep' is a Tuesday. Gate moved to end of Sunday 13 Sep."
+      },
+      {
+        "id": "E-3",
+        "status": "fixed",
+        "summary": "deploy authority wallet (~3.5 SOL) unbudgeted. Added as Task 0.5."
+      },
+      {
+        "id": "E-4",
+        "status": "fixed",
+        "summary": "settle had no safety layer and dropped the (m0, m1, activation) triple."
+      },
+      {
+        "id": "E-5",
+        "status": "fixed",
+        "summary": "six DT references in PRD had no PLAN.md definition."
+      }
+    ]
+  },
+  "scope": {
+    "read_in_full": [
+      "PRD.md",
+      "PLAN.md",
+      "warroom/WINNER-BRIEF.md",
+      "concerns.md"
+    ],
+    "read_partial": {
+      "ARCHITECTURE.md": [
+        "S3",
+        "S6",
+        "S10",
+        "S11",
+        "S17",
+        "S23",
+        "S24"
+      ]
+    },
+    "out_of_scope": [
+      "premise that xStocks dividends are reinvestment-only"
+    ]
+  },
+  "phase_ledger": [
+    {
+      "phase": "ingest",
+      "started_at": "2026-09-12T11:52:00Z",
+      "completed_at": "2026-09-12T11:56:00Z",
+      "evidence": "Read PRD.md (593 lines), PLAN.md (1072), WINNER-BRIEF.md, concerns.md in full, plus ARCHITECTURE.md sections 3, 6, 10, 11, 17, 23, 24 only. Scoped read after the previous run stalled on the full 3147-line architecture. Carried E-1..E-5 forward as already fixed and did not re-report them."
+    },
+    {
+      "phase": "competitive",
+      "started_at": "2026-09-12T11:56:00Z",
+      "completed_at": "2026-09-12T11:58:00Z",
+      "evidence": "SKIPPED: the field is unobservable for this event. 14 submissions hidden, showcase empty, zero web footprint for the event name, no judges published. Recorded in research-brief as competitor depth 2/5 and irreducible."
+    },
+    {
+      "phase": "sponsor_audit",
+      "started_at": "2026-09-12T11:58:00Z",
+      "completed_at": "2026-09-12T11:59:00Z",
+      "evidence": "SKIPPED: Stocklana has zero sponsors and zero bounty tracks. Single $100,000 main track awarded by the Solana Foundation."
+    },
+    {
+      "phase": "narrative",
+      "started_at": "2026-09-12T11:59:00Z",
+      "completed_at": "2026-09-12T12:14:00Z",
+      "evidence": "Attacked the two judge objections in PLAN Section 4. C-5: DT-10 step 3 claimed pointing the destination at the same stock is a no-op; settle only ever does transfer_checked on usdc_mint, so no such path exists and the claim is falsifiable in 30 seconds. C-6: DT-9 opened by telling the judge their own brief answers the objection, a debate trick, and its substantive answer is cut-order item 2 in a phase titled FIRST TO CUT. Both rewritten."
+    },
+    {
+      "phase": "elevations",
+      "started_at": "2026-09-12T12:14:00Z",
+      "completed_at": "2026-09-12T12:50:00Z",
+      "evidence": "9 findings: 4 HIGH, 3 MEDIUM, 2 LOW. C-1 no on-chain bound on tick MAGNITUDE, so a forward split or administrative increase harvests real shares with only off-chain crank logic guarding it. C-2 two unreconciled accrual floors, and the crank-holds branch overwrote pending_m0_bits so the E-4 receipt triple stopped matching floor(R*(1-m0/m1)). C-3 the corrected gate existed in two places one day apart plus three more cross-document contradictions on the same path. C-4 Sunday EOD unreachable: phases 0-5 are 3.0 estimated days against ~1.5 calendar days and the repository contains no code."
+    },
+    {
+      "phase": "user_selection",
+      "started_at": "2026-09-12T12:50:00Z",
+      "completed_at": "2026-09-12T12:51:00Z",
+      "evidence": "SKIPPED: autonomous_mode true, conductor-dispatched. Applied every finding rated MEDIUM or above directly rather than presenting a menu, and routed the three that need a later phase to the Downstream Items ledger as D-14, D-15, D-16."
+    },
+    {
+      "phase": "apply",
+      "started_at": "2026-09-12T12:51:00Z",
+      "completed_at": "2026-09-12T13:05:00Z",
+      "evidence": "7 of 9 findings fixed in place across ARCHITECTURE.md, PLAN.md, PRD.md, concerns.md and PULSE.md. Added MAX_TICK_RATIO with a forward_split_is_rejected test and S17 Layer 5; anchored m0 to the first harvest of a batch; reconciled the gate date and three dependent contradictions; took four cuts as defaults rather than reserves. Cascading counts kept consistent: Phase 1 test expectations 4->6 then 5->7, gate 5-of-5 -> 7-of-7, S17 four layers -> five, Phase 2 gate six instructions -> five. No new documents or templates created."
+    }
+  ],
+  "findings": [
+    {
+      "id": "C-1",
+      "priority": 1,
+      "severity": "HIGH",
+      "area": "P1 keeper trust model",
+      "title": "No on-chain bound on tick MAGNITUDE. A forward split or administrative multiplier increase harvests real shares, and the only guard is off-chain crank logic.",
+      "evidence": "ARCHITECTURE.md S6 compute_delta_raw requires only m1 >= m0; S10 harvest requires only m1 > m0. No ceiling on m1/m0. PRD F2 step 4 states splits arrive through this same multiplier channel and are 'recorded and skipped' by the tick-watcher, i.e. off-chain. S17 'Reverse splits get two layers of their own' addresses only m1 < m0.",
+      "analysis": "A forward split RAISES the multiplier. delta = floor(R*(1 - m0/m1)) then sells real exposure, not a dividend. Token-2022 reverts a delegate transfer whose amount exceeds delegated_amount, so a 2x split (delta = 50% of R) reverts on the 5% allowance. The live exposure window is therefore every non-dividend multiplier increase up to m1/m0 <= 1/0.95 = 1.0526: any bump of 5.26% or less executes in full and sells real shares. Repeated smaller ones drain the allowance cumulatively. Nothing on-chain distinguishes a dividend from an administrative correction. The Phase 4 rehearsal hack (Task 4.3: 'temporarily treat Unknown as Dividend') and DT-3's degraded path both widen this.",
+      "impact": "Falsifies the Scene 3 trust line and the S17 bound. The honest statement is that the ONLY enforced bound is the delegate cap; everything narrower is off-chain policy.",
+      "fix": "Two lines in compute_delta_raw: require!(m1 <= m0 * MAX_TICK_RATIO). MAX_TICK_RATIO = 1.02 passes every observed real dividend (AAPLx 0.060%, KOx 0.449%, STRCx ~0.51%) with 4x headroom and rejects every split and administrative jump. Plus one test. Phase 1, today, ~10 minutes.",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-2",
+      "priority": 2,
+      "severity": "HIGH",
+      "area": "P1 keeper trust model / E-4 residual",
+      "title": "Two unreconciled accrual floors, and the crank-side one silently breaks the E-4 receipt triple on the multi-tick path S17 itself calls normal.",
+      "evidence": "On-chain floor: ARCHITECTURE.md S11 settle accrues into plan.accrued_usdc and pays only when accrued >= config.payout_floor_usdc. Off-chain floor: PRD F4 step 2 ('if the aggregate is worth less than the payout floor, it waits and accrues to the next tick') and PLAN DT-4 ('raise MIN_SWAP_USD so aggregates accrue further before a swap is attempted').",
+      "analysis": "They cannot both be operative. If the crank holds below its floor it never swaps, so it never calls settle, so accrued_usdc is always 0 and the on-chain accrual is dead code. If the crank swaps every tick, MIN_SWAP_USD is dead and DT-4's remedy is a no-op. On the crank-holds branch two harvests land before one settle, and S10 unconditionally overwrites plan.pending_m0_bits on the second. The receipt then records (m0 = M1_of_tick1, m1 = M2_of_tick2, delta = tick1+tick2), so floor(R*(1-m0/m1)) recomputes only tick 2 and will not equal delta_raw.",
+      "impact": "The E-4 fix's stated purpose - S17: 'the receipt triple lets anyone recompute what the payout should have been' - is false on exactly the path S17 names as normal for small holders ('roughly two quarters').",
+      "fix": "One line in harvest: write pending_m0_bits/pending_tick_ts only when plan.pending_raw == 0, so the receipt records the span (m0_first, m1_last). The span telescopes exactly: R*(1-m0/m1) + R*(m0/m1)*(1-m1/m2) = R*(1-m0/m2). Also state in PRD F4 which floor is operative.",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-3",
+      "priority": 3,
+      "severity": "HIGH",
+      "area": "P2 gate reachability",
+      "title": "The corrected gate exists in two places one day apart, plus three more cross-document contradictions on the critical path.",
+      "evidence": "(a) PLAN S1 metadata + concerns.md + WINNER-BRIEF say 'Sun 13 Sep EOD'; PLAN S2 table and the Phase 5 header both say 'Mon 14 Sep, done by 22:00 UTC'. A builder working top-to-bottom follows the phase schedule. (b) PLAN Phase 2 gate requires 'all six instructions' in the IDL; DT-8 remediation says 'Skip close_plan'. (c) ARCHITECTURE S24: 'Rows 1 through 4 are the devnet rehearsal and must be green before row 5'; PLAN Phase 5 authorizes skipping exactly that. (d) PRD S9 lists keeper keypair and demo wallet as 'Needed by Mon 14 Sep'; the Phase 0 gate requires both funded before leaving Saturday.",
+      "impact": "E-2 corrected the date in the metadata row and the concerns line but not in the phase schedule, so the document now disagrees with itself about the single most important deadline in the project.",
+      "fix": "Name Mon 14 Sep 22:00 UTC as the one binding gate and Sun 13 Sep 20:00 UTC as the checkpoint that triggers the cuts. Reconcile (b), (c), (d).",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-4",
+      "priority": 4,
+      "severity": "HIGH",
+      "area": "P2 gate reachability",
+      "title": "Sunday EOD is not reachable and the plan does not actually attempt it. Monday 22:00 UTC is reachable only if the cuts are made now.",
+      "evidence": "Phases 0-5 total 3.0 estimated days (0.25+0.75+0.5+0.75+0.25+0.5) against roughly 1.5 remaining calendar days to Sunday EOD. Repo currently contains no code: no Anchor.toml, no programs/, no crank/, no web/. All five Phase 0 tasks are undone. PRD S9 lists paid RPC 'Not provisioned', keeper 'Not created', demo wallet 'Not funded'.",
+      "analysis": "Two Phase 0 items are wall-clock, not effort: sourcing ~4.5 SOL to mainnet (Task 0.5 flags exchange KYC latency itself) and provisioning a paid RPC. Neither compresses by working faster.",
+      "fix": "Cut now, not Monday: (1) no web work (Phase 6) before the crank logs a mainnet tick-watcher line - currently only a DT-8 remediation, should be the default; (2) build 5 instructions not 6, close_plan ships Tuesday; (3) Task 5.3 buys STRCx only for the gate, KOx/MCDx on Tuesday; (4) Phase 4 devnet rehearsal is the designated sacrifice if Sunday 20:00 UTC arrives un-green - already authorized, but S24 contradicts it.",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-5",
+      "priority": 5,
+      "severity": "MEDIUM",
+      "area": "P3 judge objections",
+      "title": "DT-10 step 3 is factually false against settle.rs, and the tree leads with tax while ignoring the obvious double-taxation counter.",
+      "evidence": "PLAN S4 DT-10 step 3: 'you can still reinvest. Point the destination at the same stock and stokss does nothing, which is exactly today's behaviour.' ARCHITECTURE.md S11: destination is an InterfaceAccount<TokenAccount> at plan.destination and the only transfer is transfer_checked on usdc_mint. There is no route-back-into-the-stock path; PayoutMode is Cash | Redirect | Bill and settle only ever moves USDC.",
+      "analysis": "False on two counts. There is no such destination, and even if there were, stokss would not 'do nothing': it harvests, swaps to USDC paying Jupiter spread, then swaps back. Two spreads and a taxable disposal, strictly worse than leaving it alone. Claiming parity with today's behaviour is falsifiable in thirty seconds. Separately, the tree's entire case is tax and it never answers the first thing anyone who does tax will say: selling the increment is itself a taxable disposal, so stokss turns one tax event into two.",
+      "fix": "Replace step 3 with the true version: opt out per position by not enrolling, or close_plan + revoke in one transaction, which IS exactly today's behaviour and IS implemented. Add the double-taxation answer: the disposal is at near-zero basis delta because you sell the increment the day you receive it, so the capital gain is ~0, and it produces the cash to pay the income tax already owed.",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-6",
+      "priority": 6,
+      "severity": "MEDIUM",
+      "area": "P3 judge objections",
+      "title": "DT-9's opening move is a rationalization, and its only substantive answer depends on a feature that is item 2 on the cut list.",
+      "evidence": "PLAN S4 DT-9 step 1 quotes the rules and concludes 'the objection is aimed at the brief, not at us'. Step 2, the front door, is PLAN cut-order item 2 and Phase 8 is titled 'FIRST TO CUT'.",
+      "analysis": "Step 1 tells a judge their objection is really an objection to their own rubric. Judges wrote the rubric; they know what 'pick one wedge' meant, and it did not mean 'one instruction is a product'. It also breaks the tree's own opening instruction not to argue the thing is bigger than it looks. And if Phase 8 is cut as planned, the tree is left with a rationalization and a generic appeal.",
+      "fix": "Drop step 1. Lead with the cut-proof answer: recurring autonomous per-user execution with on-chain receipts is not a feature, it is a service with a clock. The crank running unattended over a weekend and harvesting a corporate action nobody triggered is the app-ness, it is checkable, and it survives every cut.",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-7",
+      "priority": 7,
+      "severity": "MEDIUM",
+      "area": "P2 gate reachability",
+      "title": "The item with the longest lead time in the project sits at position 5 of Phase 0.",
+      "evidence": "PLAN Task 0.5 requires ~4.5 SOL total on mainnet and its own text names exchange KYC latency as the failure mode, but it runs after anchor init, keeper generation, RPC provisioning and demo wallet creation.",
+      "analysis": "E-3 added the task; it did not move it to the front. Every other Phase 0 task is minutes of local work. This one is the only one that can consume a day and it is the one gating Monday's deploy.",
+      "fix": "Reorder: fund first, code second. Start the transfer before running anchor init.",
+      "status": "fix-applied"
+    },
+    {
+      "id": "C-8",
+      "priority": 8,
+      "severity": "LOW",
+      "area": "P1 + P4",
+      "title": "Four small residuals: unconstrained collection account, dead fee field, no executed assertion on 602_834, no branch for the issuer's pause and permanent-delegate authority.",
+      "sub": [
+        {
+          "id": "C-8a",
+          "note": "S10 constrains collection_ata only by mint. Nothing binds it to the keeper or to Config, so no third party can verify from chain state that increments went where disclosures say. Marginal against a hostile keeper who controls the destination anyway, but the submission rests on 'every number traces to on-chain state'. One line: constraint = collection_ata.owner == config.keeper.",
+          "status": "fix-applied"
+        },
+        {
+          "id": "C-8b",
+          "note": "Config.fee_bps is declared in PRD 4.1 and never read by settle. A dead revenue field reads as unfinished to a judge and interacts with DT-9. Routed to Downstream Items rather than fixed, since wiring it is a product decision.",
+          "status": "routed-downstream"
+        },
+        {
+          "id": "C-8c",
+          "note": "After E-1, still no executed check that 602_834 is right. Task 1.2 verifies the parser against a live fixture; Task 1.1's tests assert properties (after >= before, dust < 1 unit) but never the literal. DT-2 tells you to compare by hand, which is what produced E-1. One assertion closes the loop.",
+          "status": "fix-applied"
+        },
+        {
+          "id": "C-8d",
+          "note": "S3 lists Pausable (26) and PermanentDelegate (12) on the real AAPLx and KOx mints. If the issuer pauses, transfer_checked fails and harvest has no branch. PULSE Active Facts and Phase 10 both require disclosing this, but there is no risk row and no decision tree. Routed to Downstream Items.",
+          "status": "routed-downstream"
+        }
+      ]
+    },
+    {
+      "id": "C-9",
+      "priority": 9,
+      "severity": "LOW",
+      "area": "remediation completeness",
+      "title": "The E-2 date fix missed PULSE.md. Downstream item D-1 still reads 'live by end of Mon 15 Sep'.",
+      "analysis": "Not a re-report of E-2, a report that its remediation was incomplete. PULSE is the rolling context every later skill reads on entry, so a stale wrong date there propagates past the documents that were corrected.",
+      "fix": "Corrected in place.",
+      "status": "fix-applied"
+    }
+  ],
+  "p4_unverified_on_critical_path": [
+    "ARCHITECTURE S10 harvest.rs: [UNVERIFIED] Token-2022 transfer_checked CPI with a PDA delegate, not compiled. This is the single riskiest item on the path to the Monday gate and DT-15 does not cover it (DT-15 covers token_interface import failure and the scaled_ui_amount module only).",
+    "ARCHITECTURE S11 settle.rs: [UNVERIFIED] Anchor + anchor-spl transfer patterns.",
+    "ARCHITECTURE S6 scaled_ui.rs: byte layout and values [VERIFIED] against live mainnet, but the Rust has not been compiled.",
+    "PLAN Task 0.5: '~3 SOL for program rent' is an estimate for a program that does not exist yet. Direction of error is safe (generous), so accepted."
+  ],
+  "premise_not_relitigated": "xStocks dividends are reinvestment-only. Confirmed by three independent sources per PULSE Active Facts. Untouched.",
+  "completed_at": "2026-09-12T12:05:00Z",
+  "exit": {
+    "findings_beyond_E1_E5": 9,
+    "by_severity": {
+      "HIGH": 4,
+      "MEDIUM": 3,
+      "LOW": 2
+    },
+    "fixed_in_place": [
+      "C-1",
+      "C-2",
+      "C-3",
+      "C-4",
+      "C-5",
+      "C-6",
+      "C-7",
+      "C-8a",
+      "C-8c",
+      "C-9"
+    ],
+    "routed_downstream": {
+      "C-8b": "D-14 (build, P2)",
+      "C-8d": "D-15 (stress_test, P2)",
+      "P4-unverified-PDA-delegate-CPI": "D-16 (build, P1)"
+    },
+    "files_touched": [
+      "ARCHITECTURE.md",
+      "PLAN.md",
+      "PRD.md",
+      "PULSE.md",
+      "pipeline-log.md"
+    ],
+    "no_new_artifacts": "Every fix amends existing text. No new documents, templates, rules or checklists were created.",
+    "counts_kept_consistent": "Phase 1 test expectations updated 4->6 (Task 1.1), 5->7 (Task 1.2), gate 5-of-5 -> 7-of-7. S17 'four layers' -> 'five layers'. Phase 2 gate 'all six instructions' -> five gate instructions, matching DT-8."
+  },
+  "conductor_review": {
+    "reviewed_by": "conductor",
+    "reviewed_at": "2026-09-12T11:07:15Z",
+    "accepted": [
+      "C-2",
+      "C-3",
+      "C-4",
+      "C-5",
+      "C-6",
+      "C-7",
+      "C-8",
+      "C-9"
+    ],
+    "amended": {
+      "C-1": "Guard accepted, threshold rejected. The critique set MAX_TICK_RATIO = 1.02 on the claim it 'clears every observed tick by ~4x'. Checked against all 570 recorded Dividend events: 1.02 rejects SIX real dividends, one on a tradeable mint (NVOx +2.541%, 2026-03-28). Largest dividend anywhere is WHGROx +2.926%. Raised to 1.03, which rejects zero of the 570. No protection is lost: the smallest possible forward split is 2:1, a ratio of 2.0, so any cap below 2.0 blocks every split. 1.03 gives full split protection with no false rejections."
+    },
+    "verification_note": "C-1's threshold was the only claim that did not survive checking against the measured data. C-4's 'repository contains no code' was confirmed directly: no Anchor.toml, no programs/, no crank/, no web/."
+  }
+}

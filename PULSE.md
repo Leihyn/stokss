@@ -26,7 +26,7 @@
 <!-- Owner-routed, non-blocking deferred work. Every skill reads on entry, actions rows it owns. See PULSE-PROTOCOL § Downstream Items. -->
 | ID | Raised by | Owner phase | Pri | Item | Acceptance | Status |
 |----|-----------|-------------|:---:|------|-----------|:------:|
-| D-1 | intel | forge | P0 | PRD phase 1 must be the mainnet harvest path. Binding gate: live by end of Mon 15 Sep, ahead of the expected STRCx tick ~14-15 Sep. | PRD implementation plan phase 1 = detect tick + harvest + settle on mainnet | done |
+| D-1 | intel | forge | P0 | PRD phase 1 must be the mainnet harvest path. Binding gate: live by **Mon 14 Sep 22:00 UTC**, ahead of the expected STRCx activation ~23:00 UTC that same day. <!-- [CRITIQUE C-9] read "end of Mon 15 Sep". The E-2 fix corrected that date in PRD.md, PLAN.md, WINNER-BRIEF.md and concerns.md but not here, and PULSE is the one file every later skill reads on entry, so the stale date would have outlived the documents that were fixed. --> | PRD implementation plan phase 1 = detect tick + harvest + settle on mainnet | done |
 | D-2 | intel | forge | P0 | Design the payout floor and accrual on day one. A 0.06% tick on a $200 position is $0.12, below sane swap size. | ARCHITECTURE.md specifies the threshold and the batching rule | done |
 | D-3 | intel | forge | P1 | Do NOT design a Jupiter CPI. Use a keeper-signed swap with the program capping the movable amount to the increment. | ARCHITECTURE.md shows keeper-signed swap, no CPI into Jupiter | done |
 | D-4 | intel | build | P0 | Open the Submit Project form early in the week and record its actual fields. Not scrapeable pre-submission. | SUBMISSION-CHECKLIST.md updated with real field names | open |
@@ -39,6 +39,9 @@
 | D-11 | forge | verify_preflight | P2 | The peer AMPLIFIER (crossmodel-amplify.sh) is not provisioned, so its taste/logic pass did not run. The THESIS-2 blind re-derivation DID run via crossmodel-lead.sh and returned AGREE. | state which of the two ran | done |
 | D-12 | forge cross-review | build | P2 | The EnrollPanel snippet shows only the approve instruction inline; the enroll instruction is described in prose as appended by the Anchor client. Make it explicit in code so the holder really does sign once. | one transaction containing both approve_checked and enroll | open |
 | D-13 | forge cross-review | build | P2 | The payout-mode picker from the demo path is carried by the program's PayoutMode argument but is not shown in the panel UI. | destination choice visible in EnrollPanel before signing | open |
+| D-14 | critique | build | P2 | `Config.fee_bps` is declared (PRD 4.1) and never read by `settle`. Either wire it before the transfer or delete the field. A dead revenue field reads as unfinished to a judge, and it is also the only place the business model would live, which interacts with DT-9. | `grep fee_bps` returns either a use in settle.rs or no hits at all | open |
+| D-15 | critique | stress_test | P2 | No branch anywhere for the issuer pausing the mint or using its permanent delegate. ARCHITECTURE Section 3 confirms Pausable (26) and PermanentDelegate (12) on the real AAPLx and KOx mints, and Phase 10 already requires disclosing both, but `harvest` has no handling and there is no risk row or decision tree. Low likelihood inside six days; a judge probing custody will still ask "what stops the issuer". | a stated answer for a paused mint mid-window, and a `transfer_checked` failure path that does not wedge the crank | open |
+| D-16 | critique | build | P1 | The Token-2022 `transfer_checked` CPI with a **PDA delegate** is tagged [UNVERIFIED] in ARCHITECTURE Section 10 and is the riskiest single item on the path to the Monday gate. DT-15 does not cover it: DT-15 covers `token_interface` import failure and the `scaled_ui_amount` module only. Exercise this shape first on devnet, ahead of everything else in Phase 4. | a devnet `harvest` moves a non-zero delta under a PDA delegate and confirms | open |
 
 ## Skill Sections
 
@@ -118,3 +121,42 @@ critique: the highest-value attack surfaces are (1) the delta formula and its ro
 ```json
 {"reviewer":"claude","phase":"positioning","verdict":"AGREE","findings":[{"claim_id":"positioning","question":"Given the competitor landscape and the projects differentiation, is the market positioning: crowded, similar, differentiated, or unique? Answer with exactly one of: crowded|similar|differentiated|unique.","lead_answer":"differentiated","reviewer_answer":"differentiated","reviewer_reasoning":"Both canonical files support a clear, defensible distinction from named competitors, but stop short of a uniqueness claim, and do so explicitly.\n\nEvidence for strong differentiation: research-brief.md's Category Saturation table measures 'Corporate-action products / Products acting on multiplier ticks' at 0 (1 read-only tracker), read as 'Empty'. The Capability Sheet calls Scaled UI Amount 'the sharpest \"why Solana\" available in this hackathon and almost nobody will use it.' The Kill List's 'Already Built' entries are all adjacent, not overlapping: index baskets (Symmetry), DCA (Jupiter Recurring), borrow-against-stocks (Kamino), dividend detection for tax (SolanaRWA). PRD.md's differentiation is a specific mechanic, sell exactly the multiplier increment at the next market open and pay USDC, against a specific, quantified problem ($8.72M reinvested, zero paid as cash; taxed on a distribution never received).\n\nEvidence against 'unique': the brief names SolanaRWA as a MEDIUM-threat competitor reading the same on-chain multiplier signal (differing only in that it 'does not execute, sell, or pay'), so the signal itself is not unclaimed. More decisively, the Competitor Landscape bottom line is 'The field is unobservable... Saturation is UNPRICED,' with 14 hidden submissions at UNKNOWN threat, Competitor Depth self-scored 2/5, and an explicit instruction: 'Do not rely on \"nobody else thought of this.\"' PRD.md R11 encodes the same posture, 'Unmeasurable, so do not defend on novelty. Defend on a real mainnet harvest with an explorer link.' A project whose own risk register refuses to defend on novelty is not positioned as unique.\n\n'Crowded' and 'similar' are ruled out by the measured-empty execution category and the adjacent-only competitor set. 'Unique' is ruled out by an unpriced field, one competitor on the same signal, and the documents' own refusal of the novelty defense. That leaves differentiated: a distinct, hard-to-copy wedge in a landscape that cannot be proven empty.","match":true,"resolution_note":"Weak-positive convergence; not proof."}],"resolved":false}
 ```
+
+---
+### critique — 2026-09-12T12:05:00Z
+**Status:** COMPLETE
+**Session(s):** 2 (session 1 found E-1..E-5, applied the fixes, stalled before writing state)
+
+#### Done
+- Nine findings beyond E-1..E-5, ranked; seven fixed in place, two routed downstream.
+- Highest: no on-chain bound on tick MAGNITUDE, so a forward split harvested real shares.
+- Second: two unreconciled accrual floors, one of which silently broke the E-4 receipt triple.
+
+#### Additions (not in PRD/Architecture)
+- [SKILL] [NEW] `MAX_TICK_RATIO` (1.02) plus `TickTooLarge` and `BadCollectionAccount` errors — closes C-1 and C-8a — ARCHITECTURE Sections 5, 6, 10, 17.
+- [SKILL] [NEW] Two tests, `forward_split_is_rejected` and `aaplx_tick_delta_is_exactly_602_834` — the split case only LOOKED covered, and E-1's constant was never asserted — ARCHITECTURE Section 6.
+- No new documents, templates or checklists. Every fix amends existing text.
+
+#### Deviations
+- Read ARCHITECTURE.md by section (3, 6, 10, 11, 17, 23, 24) rather than whole-file, per dispatch. Section 5 opened for two lines only, to add the error variants my own edit referenced.
+- E-1..E-5 taken as given and not re-verified, per dispatch.
+
+#### Verified Facts
+- [VF-C1] A forward split raises the multiplier, so `require!(m1 >= m0)` did not exclude it. Token-2022 reverts a delegate transfer above the allowance, so a 2x split reverted — but every non-dividend bump up to `m1/m0 = 1.0526` implied a delta at or under the 5% cap and executed in full. Source: ARCHITECTURE S6/S10 against PRD F2 step 4, which states splits arrive through this same channel.
+- [VF-C2] Span telescoping holds exactly: `R*(1-m0/m1) + R*(m0/m1)*(1-m1/m2) == R*(1-m0/m2)`, so anchoring the receipt's `m0` to the first harvest of a batch keeps the recompute valid across accrued ticks. Source: algebra, checked against the S10/S11 field flow.
+- [VF-C4] The repository contains no code: no Anchor.toml, no programs/, no crank/, no web/. All five Phase 0 tasks undone. Source: directory listing, 2026-09-12.
+
+#### Assumptions
+- [A-C1] `MAX_TICK_RATIO = 1.02` is calibrated on three observed ticks (AAPLx 0.060%, KOx 0.449%, STRCx ~0.51%) — NICE-TO-HAVE. If a real dividend ever exceeds 2% the harvest fails closed, which is the safe direction; widen the constant rather than removing it.
+- [A-C4] Phase 0's "~3 SOL for program rent" estimates a program that does not exist yet — NICE-TO-HAVE, error direction is safe.
+
+#### Blockers for Downstream
+None halting. One thing is wall-clock and is now the first instruction in Phase 0: ~4.5 SOL has to arrive on mainnet, and no amount of coding speed substitutes.
+
+#### Key Decisions
+- [D-C1] One gate, not two: Mon 14 Sep 22:00 UTC binds; Sun 13 Sep 20:00 UTC is the checkpoint that fires the cut list → affects build, deploy.
+- [D-C2] Four cuts taken now rather than held in reserve: no web before the mainnet crank logs a tick, five instructions not six, STRCx-only at the gate, devnet rehearsal is the designated sacrifice → affects build.
+- [D-C3] DT-9 leads with autonomy-under-a-clock instead of quoting the rulebook back, so the answer survives the front door being cut → affects demo, package.
+
+#### For Next Skill
+build: start Task 0.5 (fund ~4.5 SOL) before `anchor init`; it is the only item with hours of lead time. Phase 1 now expects 6 tests then 7, not 4 then 5. The gate is Monday 22:00 UTC and the four cuts in PLAN "Cuts taken now" are defaults, not contingencies. D-16 is P1 and owned by you: the PDA-delegate `transfer_checked` shape is [UNVERIFIED] and DT-15 does not cover it, so exercise it first on devnet. D-8 (revert the Unknown→Dividend hack) is now load-bearing for C-1, because that hack turns every unlabelled multiplier move into a harvest. Do not re-litigate the dividend premise.

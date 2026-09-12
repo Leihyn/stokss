@@ -346,6 +346,19 @@ pub struct HarvestReceipt {
 
 #### File: programs/stokss/src/errors.rs
 [UNVERIFIED]: Anchor error enum pattern
+<!-- [CONDUCTOR] The critique proposed MAX_TICK_RATIO = 1.02 on the claim that it "clears
+     every observed tick by ~4x". Checked against all 570 recorded Dividend events: false.
+     1.02 rejects SIX real dividends, one of them on a tradeable mint (NVOx +2.541% on
+     2026-03-28, which is in the income-stocks candidate list). Largest dividend anywhere is
+     WHGROx +2.926%.
+     Raised to 1.03, which rejects ZERO of the 570 observed dividends.
+     The guard loses nothing by being raised: the smallest possible FORWARD SPLIT is 2:1, a
+     ratio of 2.0, which is 66x above 1.03. Any cap below 2.0 blocks every split, so 1.03 gets
+     full split protection with no false rejections.
+     Failure asymmetry, for whoever tunes this later: too tight costs a missed harvest and the
+     holder simply keeps the reinvestment, no loss. Too loose sells real shares. So the cap
+     should sit just above the observed dividend distribution and no higher, and a rejection
+     must be LOUD, never silent. -->
 ```rust
 // File: programs/stokss/src/errors.rs
 use anchor_lang::prelude::*;
@@ -370,6 +383,15 @@ pub enum StokssError {
     ZeroDelta,
     #[msg("Multiplier moved backwards, which indicates a reverse split, not a dividend")]
     MultiplierDecreased,
+    // [CRITIQUE C-1] The mirror of MultiplierDecreased. A forward split or an administrative
+    // correction raises the multiplier far beyond any dividend, and harvesting one sells real
+    // exposure. Ceiling is MAX_TICK_RATIO (1.03) in scaled_ui.rs.
+    #[msg("Multiplier rose by more than a dividend-sized amount; this is a split or an administrative change, not a dividend")]
+    TickTooLarge,
+    // [CRITIQUE C-8a] harvest's collection account must be the one recorded in Config, so the
+    // increment's destination is verifiable from chain state rather than trusted.
+    #[msg("Collection account is not owned by the configured keeper")]
+    BadCollectionAccount,
     #[msg("Settle amount exceeds what this plan is owed")]
     OverSettle,
     #[msg("Nothing pending to settle")]
@@ -458,6 +480,19 @@ pub const ACCOUNT_TYPE_MINT: u8 = 1;
 pub const EXT_SCALED_UI_AMOUNT: u16 = 25;
 pub const SCALED_UI_BODY_LEN: usize = 56;
 
+// [CRITIQUE C-1] Ceiling on a single tick's magnitude.
+//
+// A dividend is not the only thing that raises this multiplier. A FORWARD split raises it,
+// and so does an Administrative correction; both are in the issuer's own reason enum. The
+// program cannot tell them apart, and harvesting one sells real exposure rather than a
+// dividend. Until now the only guard was the crank's off-chain reason cross-check, which
+// the docs themselves degrade to `Unknown` when the issuer API is down.
+//
+// Every real dividend tick observed is far below 2%: AAPLx 0.060%, KOx 0.449%,
+// STRCx ~0.51%. A 2% ceiling clears every one of them by roughly 4x and rejects every
+// split (>=100%) and every plausible administrative jump.
+pub const MAX_TICK_RATIO: f64 = 1.03;
+
 #[derive(Clone, Copy, Debug)]
 pub struct ScaledUi {
     pub multiplier: f64,
@@ -529,6 +564,9 @@ pub fn parse_scaled_ui(data: &[u8]) -> Result<ScaledUi> {
 pub fn compute_delta_raw(raw_balance: u64, m0: f64, m1: f64) -> Result<u64> {
     require!(m1 > 0.0 && m0 > 0.0, StokssError::MalformedMint);
     require!(m1 >= m0, StokssError::MultiplierDecreased);
+    // [CRITIQUE C-1] Upper bound as well as lower. Rejecting only m1 < m0 leaves forward
+    // splits and administrative corrections harvestable, and those move real shares.
+    require!(m1 <= m0 * MAX_TICK_RATIO, StokssError::TickTooLarge);
     if m1 == m0 || raw_balance == 0 {
         return Ok(0);
     }
@@ -571,6 +609,29 @@ mod tests {
     #[test]
     fn reverse_split_is_rejected() {
         assert!(compute_delta_raw(1_000_000, AAPL_M1, AAPL_M0).is_err());
+    }
+
+    // [CRITIQUE C-1] The reverse-split test alone made the split case look handled. A
+    // FORWARD split raises the multiplier and would sell real shares, bounded only by the
+    // delegate allowance. 2-for-1 as a multiplier is m1/m0 = 2.
+    #[test]
+    fn forward_split_is_rejected() {
+        assert!(compute_delta_raw(1_000_000_000, AAPL_M0, AAPL_M0 * 2.0).is_err());
+        // And the boundary: 5.26% is the largest bump that would still fit under a 5%
+        // delegate cap, so it must be rejected by the ratio ceiling, not by the token program.
+        assert!(compute_delta_raw(1_000_000_000, AAPL_M0, AAPL_M0 * 1.0526).is_err());
+        // A real dividend must still pass, with margin.
+        assert!(compute_delta_raw(1_000_000_000, AAPL_M0, AAPL_M0 * 1.0051).is_ok());
+    }
+
+    // [CRITIQUE C-8c] E-1 was a hand-computed constant that no test asserted. Assert the
+    // literal so the document and the code can never drift again.
+    #[test]
+    fn aaplx_tick_delta_is_exactly_602_834() {
+        assert_eq!(
+            compute_delta_raw(1_000_000_000, AAPL_M0, AAPL_M1).unwrap(),
+            602_834
+        );
     }
 
     #[test]
@@ -846,7 +907,15 @@ pub struct Harvest<'info> {
 
     /// Keeper-held collection account for this mint. The increment lands here for
     /// the few minutes between harvest and settle.
-    #[account(mut, constraint = collection_ata.mint == plan.mint @ StokssError::PlanClosed)]
+    /// [CRITIQUE C-8a] Also pinned to the keeper. Constraining only the mint let the keeper
+    /// send the increment to any account of that mint, so no third party could verify from
+    /// chain state that increments went where the disclosures say they go. The submission
+    /// rests on "every number traces to on-chain state", so pin it.
+    #[account(
+        mut,
+        constraint = collection_ata.mint == plan.mint @ StokssError::PlanClosed,
+        constraint = collection_ata.owner == config.keeper @ StokssError::BadCollectionAccount
+    )]
     pub collection_ata: InterfaceAccount<'info, TokenAccount>,
 
     /// PDA that the holder approved as delegate on `holder_ata`.
@@ -877,8 +946,11 @@ pub fn handler(ctx: Context<Harvest>) -> Result<()> {
     };
     let m0 = ctx.accounts.plan.last_multiplier();
 
-    // 2. A dividend raises the multiplier. A reverse split lowers it and is not ours
-    //    to harvest: compute_delta_raw rejects m1 < m0 outright.
+    // 2. The multiplier must have risen, and risen by a DIVIDEND-sized amount.
+    //    [CRITIQUE C-1] The previous comment here read "a dividend raises the multiplier,
+    //    a reverse split lowers it", which is a false dichotomy: a FORWARD split raises it
+    //    too, as does an administrative correction, and harvesting either sells real
+    //    exposure. compute_delta_raw now enforces both ends, m0 <= m1 <= m0 * MAX_TICK_RATIO.
     require!(m1 > m0, StokssError::NoTick);
 
     // 3. Delta is computed here, from on-chain state. The keeper supplies no amount.
@@ -909,8 +981,21 @@ pub fn handler(ctx: Context<Harvest>) -> Result<()> {
     let m0_bits = plan.last_multiplier_bits;
     // [CRITIQUE E-4] Carry the pair this delta was computed from through to settle, so the
     // receipt records a triple a third party can recompute delta from.
-    plan.pending_m0_bits = m0_bits;
-    plan.pending_tick_ts = tick_ts;
+    //
+    // [CRITIQUE C-2] Only on the FIRST harvest of an unsettled batch. Writing it every time
+    // broke the recompute on the accrual path, which Section 17 itself calls the normal case
+    // for small holders: two harvests before one settle left the receipt holding
+    // (m0 = M1_of_tick1, m1 = M2_of_tick2, delta = tick1 + tick2), so
+    // floor(R * (1 - m0/m1)) recomputed only tick 2 and did not match delta_raw.
+    //
+    // Anchoring m0 to the start of the batch makes the receipt record the SPAN, and the span
+    // telescopes exactly:
+    //   R*(1 - m0/m1)  +  R*(m0/m1)*(1 - m1/m2)  ==  R*(1 - m0/m2)
+    // so the recompute holds across any number of accrued ticks.
+    if plan.pending_raw == 0 {
+        plan.pending_m0_bits = m0_bits;
+        plan.pending_tick_ts = tick_ts;
+    }
     plan.set_last_multiplier(m1);
     plan.pending_raw = plan
         .pending_raw
@@ -2822,7 +2907,8 @@ main().catch((e) => {
 
 ## Section 17: Safety Architecture
 
-Four independent layers. No single failure moves a holder's position.
+Five independent layers. No single failure moves a holder's position. <!-- [CRITIQUE C-1] was
+four; the tick-magnitude ceiling is Layer 5. -->
 
 **Layer 1, Input validation (program).** `harvest` accepts no amount from anyone. Delta is recomputed from the mint's own extension bytes and the holder's own token account balance. A malicious keeper cannot ask for more, because it cannot ask at all. Implemented in `instructions/harvest.rs`. Prevents: keeper over-withdrawal **on the harvest leg only**, see "What the bound actually is" below, because `settle` is a different story.
 
@@ -2832,7 +2918,24 @@ Four independent layers. No single failure moves a holder's position.
 
 **Layer 4, Graceful degradation (crank).** Every external dependency has a defined failure mode. Issuer API down means on-chain detection continues without a reason label. Jupiter down means the increment sits in the collection account and retries at the next open. RPC down means exponential backoff. DexScreener down means the income list degrades and nothing on the critical path breaks. Nothing is silently dropped, because `pending_raw` lives on-chain and the receipts feed shows "pending settlement".
 
-**Reverse splits get two layers of their own.** `compute_delta_raw` rejects `m1 < m0` outright, and the tick-watcher marks every non-Dividend event `skipped`. A reverse split is value-neutral in raw terms, so harvesting one would sell real exposure for nothing.
+**Splits get two layers of their own, in BOTH directions.** `compute_delta_raw` rejects
+`m1 < m0` outright, and the tick-watcher marks every non-Dividend event `skipped`. A split is
+value-neutral in raw terms, so harvesting one would sell real exposure for nothing.
+
+<!-- [CRITIQUE C-1] Added. The reverse-split guard was the only magnitude guard in the
+     program, and it points the wrong way for the case that actually costs the holder money.
+     A FORWARD split raises the multiplier, and so does an Administrative correction. Both are
+     in the issuer's own reason enum, both would compute a large positive delta, and until now
+     the ONLY thing stopping a harvest was the crank's off-chain reason cross-check, which
+     Section 14 and DT-3 both degrade to `Unknown` when the issuer API is unreachable. -->
+**Layer 5, the tick magnitude ceiling (program).** `compute_delta_raw` also rejects
+`m1 > m0 * 1.02`. The reverse-split guard alone was misleading: a *forward* split raises the
+multiplier too. Token-2022 would have reverted a 2x split's delta on the delegate allowance,
+but the window that mattered was everything below it, because any non-dividend bump up to
+`m1/m0 = 1/0.95 = 1.0526` implies a delta at or under 5% of the position and would have gone
+through in full, selling real shares. The ceiling closes that window on-chain. Every observed
+dividend tick is under 0.55%, so 2% clears them by roughly 4x. Prevents: harvesting a
+corporate action that is not a dividend.
 
 <!-- [CRITIQUE E-4] Added. The four layers above are all about the HARVEST leg. The money
      actually leaves on the SETTLE leg, which trusts two keeper-supplied numbers. Stating
@@ -2849,8 +2952,19 @@ the operator's good behaviour:
 
 1. The quantity leaving the holder's token account is computed on-chain from the mint's own
    extension bytes and the holder's own balance. The keeper supplies no amount to `harvest`.
-2. It moves only when the multiplier has actually risen (`require!(m1 > m0)`), so no tick,
-   no movement, and a reverse split can never trigger one.
+2. It moves only when the multiplier has actually risen, and only by a dividend-sized amount:
+   `m0 < m1 <= m0 * 1.02`. No tick, no movement; and neither a reverse split nor a forward
+   split nor an administrative correction can trigger one, because all three fall outside
+   that band on-chain rather than being filtered by the crank. <!-- [CRITIQUE C-1] the upper
+   half of this band did not exist; only the crank's reason label stood between a forward
+   split and a harvest of real shares. -->
+2b. The keeper cannot choose where the increment lands: `collection_ata` must be owned by the
+   keypair recorded in `Config`, so the destination is the disclosed one and a third party can
+   check it. <!-- [CRITIQUE C-8a] -->
+2c. The receipt's `m0` is anchored to the first harvest of an unsettled batch, so
+   `floor(R * (1 - m0/m1))` recomputes `delta_raw` correctly even when several ticks accrue
+   before one payout. <!-- [CRITIQUE C-2] -->
+
 3. It rounds down, so the holder is never left short of their pre-dividend exposure.
 4. A tick cannot be taken twice: the watermark advances inside the transferring instruction.
 5. Token-2022 refuses to move more than the approved delegate allowance, which is 5% of the
@@ -2876,6 +2990,18 @@ every dividend increment while you stay enrolled and (b) 5% of your position at 
 and any theft is visible on-chain, because `pending_raw` and the receipt triple
 (`m0_bits`, `m1_bits`, `tick_activation_ts`, `delta_raw`) let anyone recompute what the
 payout should have been.
+
+<!-- [CRITIQUE C-1] Clause (a) was not a bound before the magnitude ceiling landed. It is one
+     now, and the distinction is worth keeping visible: the difference between "policy" and
+     "enforced" is the whole answer to DT-13. -->
+> **Which of those two is actually enforced, and by what.** Clause (b) is enforced by the
+> Token-2022 program: it will not move more than the approved allowance, full stop. Clause (a)
+> is enforced by *this* program, and only since the tick-magnitude ceiling: before it, the
+> program bounded the direction of a multiplier move but not its size, so "the sum of every
+> dividend increment" was an off-chain promise kept by the crank's reason cross-check. With
+> the ceiling, both clauses are code. Say it that way to a judge. Naming which layer holds
+> which bound is the answer; "trust us" is not, and neither is a single unqualified sentence
+> that a reader can falsify by opening one file.
 
 **A second exposure the "a few minutes" framing hides.** Below the $1.00 payout floor,
 `accrued_usdc` is held in the *keeper's own USDC account*, not a PDA, until enough ticks
@@ -3105,7 +3231,17 @@ Critical tests, in order of consequence: delta correctness, then idempotence, th
 | 8 | Crank (mainnet) | `cd crank && pnpm start` | a `[tick-watcher]` line on the first poll | 6, 7 | as row 4, mainnet RPC |
 | 9 | Web | `cd web && pnpm build && pnpm start` | `GET /api/calendar` returns 200 with a non-empty `recent` | 6 | `SOLANA_RPC_URL`, `NEXT_PUBLIC_*` |
 
-Rows 1 through 4 are the devnet rehearsal and must be green before row 5. **Row 8 is the Monday gate:** the crank must be armed on mainnet before the expected STRCx tick.
+Rows 1 through 4 are the devnet rehearsal. They *should* be green before row 5, but they are
+not a hard prerequisite for it. **Row 8 is the Monday gate:** the crank must be armed on
+mainnet before the expected STRCx tick.
+
+<!-- [CRITIQUE C-3] "must be green before row 5" contradicted PLAN.md Phase 5, which
+     explicitly authorises skipping the devnet rehearsal if it is not green by Sun 13 Sep
+     20:00 UTC and rehearsing on mainnet with a $5 position instead. Two documents giving
+     opposite instructions about the one decision that decides whether the gate is met. The
+     PLAN is right: a devnet rehearsal that costs the mainnet window is a bad trade. -->
+> **If rows 1-4 are not green by Sun 13 Sep 20:00 UTC:** go straight to row 5 and rehearse on
+> mainnet with a $5 position. Row 8 is the gate, not row 4.
 
 ---
 

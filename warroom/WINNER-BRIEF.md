@@ -39,7 +39,8 @@ All checked live 12 Sep 2026. Full detail in `~/.claude/skills/hackathon-briefs/
 
 ## Gates
 - **Sun 13 Sep:** verify `spl-token update-ui-amount-multiplier` accepts a future timestamp on devnet; verify Solana Subscriptions and Allowances; re-verify that dividends are reinvestment-only.
-- **Mon 15 Sep, end of day:** mainnet harvest path live. This is the binding internal gate, set by the expected STRCx tick.
+- **Sun 13 Sep, end of day:** mainnet harvest path live, crank armed, STRCx enrolled. **Hard stop Mon 14 Sep 22:00 UTC.** This is the binding internal gate, set by the expected STRCx tick. <!-- [CRITIQUE E-2] Corrected from "Mon 15 Sep, end of day". 15 Sep 2026 is a Tuesday; Monday is the 14th. Aug 30 + 15d = Mon 14 Sep, and ticks activate 23:00-00:30 UTC, so the old gate expired after the tick it was set by. The crank must be RUNNING and the plan ENROLLED before activation: the tick-watcher only fires on a change between two observations (`if (!prev) continue`) and `enroll` snapshots the current effective multiplier, so a tick that lands before both are live is unharvestable forever. -->
+- **Mon 14 Sep, ~23:00 UTC:** expected STRCx activation. Market is shut, so the harvest itself executes Tue 15 Sep at the 13:30 UTC open.
 - **~14-15 Sep:** expected real STRCx multiplier tick, ~0.51%, $335k liquidity. Capture it on video. Primary objective of the week.
 - **Fri 18 Sep, 20:00 UTC:** submissions close. Submit early, edit until close.
 - **2 Oct:** judging ends. Every submitted link must still resolve on this date.

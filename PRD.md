@@ -432,7 +432,16 @@ Target: 3 minutes 30 seconds. Eight scenes, one per user flow.
 
 **On screen:** tap "Get paid in cash" on KOx. The panel shows what the last four ticks would have paid. Pick "USDC to my wallet". One signature. The approval screen shows the capped delegate amount.
 
-**Voiceover:** "One signature. You are approving us for a capped amount, and the program can only ever move the dividend increment. Your position is untouchable. Watch the cap."
+**Voiceover:** "One signature. You are approving a capped delegate, five percent of the position and no more, and the program computes the increment itself. It cannot take an amount we ask it for, because it does not accept one. Worst case, we can misroute a dividend. We cannot touch the stock. And you revoke it in one transaction."
+
+<!-- [CRITIQUE E-4] Replaced "Your position is untouchable" plus an unqualified "can only
+     ever move the dividend increment". Both are true of harvest.rs and false of settle.rs,
+     which takes the payout amount from the keeper. A judge reading the program finds this
+     in thirty seconds; claiming the stronger version and being caught costs more than the
+     honest version costs. The honest version is also the better line: naming the exact
+     worst case is what a real product's security page reads like. See ARCHITECTURE.md
+     Section 17, "What the bound actually is". -->
+**Also on screen:** the one-line trust statement, verbatim: *"stokss can misroute a dividend. It cannot move your shares."*
 
 ### Scene 4: The tick fires (1:30,2:10): covers F3
 
@@ -474,7 +483,7 @@ Checked: no em dashes in voiceover; no "leverage", "synergy", "paradigm", "seaml
 
 | # | Risk | Category | Severity | Likelihood | Impact | Mitigation | Decision tree |
 |---|------|----------|:---:|:---:|--------|-----------|---|
-| R1 | No real dividend tick lands before the deadline, so the demo is simulated | Demo | CRITICAL | MEDIUM | The strongest evidence in the submission is lost; the demo drops to a token we minted | STRCx has ticked every ~15 days (Jun 30, Jul 15, Jul 31, Aug 14, Aug 30) and is expected 14-15 Sep. Be live on mainnet by Mon 15 Sep. QQQx around 20-30 Sep is a backup inside the judging window. | DT-1 |
+| R1 | No real dividend tick lands before the deadline, so the demo is simulated | Demo | CRITICAL | MEDIUM | The strongest evidence in the submission is lost; the demo drops to a token we minted | STRCx has ticked every ~15 days (Jun 30, Jul 15, Jul 31, Aug 14, Aug 30), so Aug 30 + 15d puts the next activation on **Mon 14 Sep, ~23:00 UTC**. Be live, armed and enrolled by **Sun 13 Sep EOD, hard stop Mon 14 Sep 22:00 UTC**, the crank must be observing the mint before activation or the tick is undetectable, and the plan must be enrolled before activation or delta is zero. QQQx around 20-30 Sep is a backup inside the judging window. | DT-1 |
 | R2 | Scaled-vs-raw amount confusion moves the wrong quantity of a real security | Technical | CRITICAL | LOW | Real financial loss to a real holder | Solana's integration guide confirms transfer and delegate amounts are raw. Every amount in the codebase is suffixed `_raw`. The program recomputes delta itself and never trusts a caller amount. Unit test asserts delta against the four real historical AAPLx ticks. | DT-2 |
 | R3 | Backed public API unavailable | Technical | MEDIUM | MEDIUM | Loss of tick reason, schedule and backfill history | On-chain mint state is authoritative for detection and delta. The API is enrichment. Degrade to on-chain-only and show a banner. | DT-3 |
 | R4 | Jupiter unavailable, rate-limited, or no route | Technical | HIGH | MEDIUM | Increments collected but not converted; payouts stall | 60 rpm limit respected by design (one swap per mint per tick, not per user). On failure the increment stays put and retries next open; receipts show "pending settlement". | DT-4 |
@@ -486,7 +495,7 @@ Checked: no em dashes in voiceover; no "leverage", "synergy", "paradigm", "seaml
 | R10 | A judge argues reinvestment is good and cash is worse | Judging | MEDIUM | MEDIUM | The premise looks like a preference, not a problem | Lead with the tax liability, which is not a preference. Second argument is optionality: reinvesting into the same stock is a concentration decision made for you. | DT-10 |
 | R11 | One of the 14 hidden submissions ships the same mechanic | Competitive | MEDIUM | LOW | Splits judge attention | Unmeasurable, so do not defend on novelty. Defend on a real mainnet harvest with an explorer link, which is hard to match in six days. | DT-11 |
 | R12 | Scope creep through the front door or bill routing | Scope | HIGH | MEDIUM | The harvest path is late, cascading into R8 and R1 | Both are explicitly cuttable, and the cut order is written into the plan. No vault, no share accounting, no rebalancing. | DT-12 |
-| R13 | Keeper trust: the increment sits in a keeper account between harvest and settle | Technical | MEDIUM | LOW | A judge or user questions custody | The delegate cap and the program-computed delta bound the exposure to one increment. Shown on screen during the demo. A future version does an atomic route. | DT-13 |
+| R13 | Keeper trust: `settle` takes the payout amount from the keeper, so the keeper can under-pay, zero out `pending_raw`, or never settle. Sub-floor `accrued_usdc` sits in the keeper's own USDC account for months, not minutes. | Technical | **HIGH** | LOW | A judge reads `settle.rs`, finds the gap after hearing an absolute custody claim, and discounts the whole submission for overclaiming | State the bound that actually holds and name the gap first, before a judge finds it: the keeper can misroute a dividend, capped at 5% of position lifetime by the delegate, and can never touch the position. Receipt now carries the real (m0, m1, activation, delta) triple so any third party can recompute the correct payout. ARCHITECTURE.md Section 17 "What the bound actually is". | DT-13 |
 | R14 | A submitted link dies before judging ends on 2 October | Demo | HIGH | MEDIUM | The submission becomes unscoreable two weeks after we stop watching | Deploy to a host with no cold sleep. Weekly link check to 2 Oct on the checklist. | DT-14 |
 
 Six categories covered: Technical (R2, R3, R4, R5, R6, R13), Demo (R1, R7, R14), Time (R8), Judging (R9, R10), Competitive (R11), Scope (R12).
@@ -571,8 +580,8 @@ Today is Saturday 12 September. The deadline is Friday 18 September 20:00 UTC. S
 | Concern | Severity | How this PRD addresses it |
 |---|:---:|---|
 | Real mainnet tick harvested end to end with an explorer link | [C] | Demo Scene 5 and Section 7.6. The whole build order in Section 8 exists to make the Monday gate. |
-| Mainnet harvest path live by end of Monday 15 Sep | [C] | Section 8 makes Monday the gate day and names what gets cut to protect it. R8 and DT-8. |
-| Program provably cannot move more than the increment | [C] | Section 4.1: the program recomputes delta from on-chain state and never trusts a caller amount; the delegate is capped. Shown on screen in Scene 3. R13. |
+| Mainnet harvest path live, armed and enrolled by Sun 13 Sep EOD (hard stop Mon 14 Sep 22:00 UTC) | [C] | Section 8 makes Monday 14 Sep the gate day and names what gets cut to protect it. R8 and DT-8. <!-- [CRITIQUE E-2] date corrected: "Monday 15 Sep" is a Tuesday. --> |
+| Program provably cannot move more than the increment | [C] | Holds for the harvest leg: Section 4.1, delta recomputed on-chain, no caller amount, capped delegate. **Does NOT hold for settle**, which takes the payout amount from the keeper, stated openly in ARCHITECTURE.md Section 17 "What the bound actually is" and in Scene 3 rather than claimed away. The bound that does hold: the keeper can misroute a dividend, capped at 5% of position by the delegate; it can never move the position. R13. |
 | Every link resolves on 2 October | [C] | Section 9 requires hosting with no cold sleep. R14 and DT-14. The submission checklist has a weekly link check. |
 | Delta computed in RAW units | [C] | Section 4.1 and Section 5 A2 both state raw. R2 mitigation includes a unit test against four real historical ticks. |
 | Accrual floor and cross-user batching | [I] | Section 4.4: one swap per mint per tick, not per user. Section 3 F4 step 2 holds below the floor. |

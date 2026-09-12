@@ -61,8 +61,8 @@
         "completed_at": "2026-09-12T09:03:32.538402+00:00"
       },
       "critique": {
-        "status": "pending",
-        "dispatched_at": null,
+        "status": "running",
+        "dispatched_at": "2026-09-12T09:03:48.882483+00:00",
         "completed_at": null
       },
       "url_preverify": {
@@ -180,7 +180,7 @@
     "idea_selection": {
       "answered": true,
       "answered_at": "2026-09-12T08:19:01.107788+00:00",
-      "idea": "stokss \u2014 dividend harvest on Token-2022 scaled-UI multiplier ticks, queued until the US market open, payout to wallet or bill",
+      "idea": "stokss — dividend harvest on Token-2022 scaled-UI multiplier ticks, queued until the US market open, payout to wallet or bill",
       "modification": "ADD BUY FRONT DOOR: one-click Jupiter buy for dividend-paying xStocks so the app is a destination, not a wallet utility (~3h, makes the demo a full loop)",
       "name": "stokss",
       "name_rationale": "user-chosen; replaces working title Coupon, which collides with discount-voucher reading"
@@ -188,7 +188,7 @@
   },
   "dispatch_context": {
     "mode": "fresh",
-    "target_skill": "hackathon-forge",
+    "target_skill": "hackathon-critique",
     "attempt": 1,
     "max_attempts": 3,
     "working_dir": "/Users/machine/Desktop/dev/stokss",
@@ -205,7 +205,7 @@
     "spawned_at": "2026-09-12T08:15:15.528400+00:00"
   },
   "created_at": "2026-09-12T08:15:15.528400+00:00",
-  "updated_at": "2026-09-12T09:03:32.538402+00:00",
+  "updated_at": "2026-09-12T09:03:48.882483+00:00",
   "intelState": {
     "status": "complete",
     "sourceCount": 21,
@@ -221,7 +221,7 @@
   "warroomState": {
     "source": "ideate",
     "winner_brief": "/Users/machine/Desktop/dev/stokss/warroom/WINNER-BRIEF.md",
-    "winner": "stokss \u2014 sell the xStocks multiplier increment at the next market open and route the cash to the holder"
+    "winner": "stokss — sell the xStocks multiplier increment at the next market open and route the cash to the holder"
   },
   "forgeState": {
     "status": "complete",
@@ -261,5 +261,12 @@
   "livetestState": null,
   "interrogateState": null,
   "demoRehearsalState": null,
-  "builder_profile": null
+  "builder_profile": null,
+  "retry_ledger": {
+    "critique": {
+      "blocked_retries": {
+        "external": 1
+      }
+    }
+  }
 }

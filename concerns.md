@@ -1,7 +1,7 @@
 # concerns.md: stokss
 
 [C] Demo failure: a real mainnet multiplier tick must be detected, harvested and settled end to end, with an explorer link. A devnet-only demo is a discounted fallback, not the plan.
-[C] Timing: the mainnet harvest path must be live by end of Monday 15 Sep, ahead of the expected STRCx tick around 14-15 Sep. Missing that window costs the strongest evidence in the submission.
+[C] Timing: the mainnet harvest path must be live, the crank running and STRCx enrolled by end of Sunday 13 Sep, hard stop Monday 14 Sep 22:00 UTC, ahead of the expected STRCx activation on Mon 14 Sep ~23:00 UTC. (Corrected by critique: the earlier "Monday 15 Sep" is not a Monday. 15 Sep 2026 is a Tuesday.) The crank must be running BEFORE activation, not after: the tick-watcher only detects a change between two observations, and enroll snapshots the current multiplier, so a tick that fires first is unharvestable forever. Missing that window costs the strongest evidence in the submission.
 [C] Custody: the program must be provably unable to move more than the dividend increment. A capped delegate and a bounded delta are the only things standing between us and "why would I trust your keeper".
 [C] Link survival: every submitted link must still resolve on 2 October. Judging runs two weeks past the deadline.
 [C] Correctness: delta must be computed in RAW units against the on-chain multiplier pair. A scaled-vs-raw mistake silently moves the wrong amount of a real security.

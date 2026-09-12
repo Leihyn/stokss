@@ -160,13 +160,30 @@ delta_raw = floor(R * (1 - M0/M1))
 
 Rounding is **down**, per Solana's Scaled UI Amount integration guide: "If there are rounding issues, round down and prefer leaving a tiny amount of dust rather than risk the transaction failing." Dust stays with the holder.
 
-Worked example, AAPLx's real 2026-08-08 tick, on a 10.0 raw position:
+<!-- [CRITIQUE E-1] Corrected worked example: the prior text carried ratio 0.000602956 and
+     delta 602_956. Both were hand-written and never executed. The true ratio is
+     0.0006028342776259743 and the true floor is 602_834. The old value took 122 raw units
+     TOO MANY and left the holder 122.12 raw-scaled units SHORT, inverting the one invariant
+     this whole formula exists to hold. Units also disambiguated: R is RAW, the position is
+     10.0 unscaled tokens = 1e9 raw at 8 decimals, and the quoted price is per UNSCALED
+     token (= share price x multiplier), not per raw base unit. -->
+Worked example, AAPLx's real 2026-08-08 tick. The position is **10.0 unscaled tokens**, which
+at 8 decimals is `R = 1_000_000_000` **raw** units. Every quantity below is raw:
 ```
 M0 = 1.0026642075893797, M1 = 1.0032690125398187
-1 - M0/M1 = 0.000602956...
-delta_raw = floor(10.0 * 0.000602956 * 1e8) = 602_956 (0.00602956 AAPLx)
-at $333.53 per raw token, that is $2.01
+1 - M0/M1 = 0.0006028342776259743
+delta_raw = floor(1_000_000_000 * 0.0006028342776259743) = 602_834
+
+check: (R - delta_raw) * M1 - R * M0 = +0.2785   (>= 0, and < M1, so dust stays with the holder)
+
+At $333.53 per UNSCALED token (share price x multiplier, which is what DexScreener and
+Jupiter quote), 602_834 raw = 0.00602834 unscaled tokens = $2.01.
 ```
+
+> **Do not hand-compute this ratio.** `1 - M0/M1` suffers catastrophic cancellation: M0/M1 is
+> 0.99939..., so the subtraction discards about four significant digits. Every constant in
+> this document that depends on it was recomputed, not typed. If code and this document ever
+> disagree on a delta, the code in Section 6 is authoritative, recompute, do not copy.
 
 ---
 
@@ -285,6 +302,14 @@ pub struct UserPlan {
     /// f64 bit pattern of the multiplier at the last successful harvest.
     /// Stored as bits because f64 is not a borsh-stable type across targets.
     pub last_multiplier_bits: u64,
+    /// [CRITIQUE E-4] The m0 the pending harvest was computed against, and the mint's
+    /// effective_ts at that moment. Carried from harvest to settle so the HarvestReceipt
+    /// can record the ACTUAL (m0, m1, effective_ts) triple. Without these, settle wrote
+    /// `m0_bits = 0` and `tick_activation_ts = 0`, and `m1_bits` was already the
+    /// post-harvest watermark, so the receipt could not be used to recompute delta and
+    /// the "verifiable without trusting the operator" claim was false.
+    pub pending_m0_bits: u64,
+    pub pending_tick_ts: i64,
     /// Raw xStock units harvested but not yet settled.
     pub pending_raw: u64,
     /// USDC accrued below the payout floor, held for the holder.
@@ -843,9 +868,12 @@ pub fn handler(ctx: Context<Harvest>) -> Result<()> {
     require!(!ctx.accounts.plan.closed, StokssError::PlanClosed);
 
     // 1. Read the current effective multiplier straight off the mint.
-    let m1 = {
+    // [CRITIQUE E-4] Also capture effective_ts so settle can stamp the receipt with the
+    // activation the delta belongs to.
+    let (m1, tick_ts) = {
         let data = ctx.accounts.mint_raw.try_borrow_data()?;
-        parse_scaled_ui(&data)?.effective(now)
+        let sui = parse_scaled_ui(&data)?;
+        (sui.effective(now), sui.effective_ts)
     };
     let m0 = ctx.accounts.plan.last_multiplier();
 
@@ -879,6 +907,10 @@ pub fn handler(ctx: Context<Harvest>) -> Result<()> {
     //    and fails at ZeroDelta, so a tick can never be taken twice.
     let plan = &mut ctx.accounts.plan;
     let m0_bits = plan.last_multiplier_bits;
+    // [CRITIQUE E-4] Carry the pair this delta was computed from through to settle, so the
+    // receipt records a triple a third party can recompute delta from.
+    plan.pending_m0_bits = m0_bits;
+    plan.pending_tick_ts = tick_ts;
     plan.set_last_multiplier(m1);
     plan.pending_raw = plan
         .pending_raw
@@ -1016,11 +1048,14 @@ pub fn handler(ctx: Context<Settle>, usdc_amount: u64, delta_raw_settled: u64) -
     let receipt = &mut ctx.accounts.receipt;
     receipt.plan = plan.key();
     receipt.mint = plan.mint;
-    receipt.m0_bits = 0;
+    // [CRITIQUE E-4] Record the real (m0, m1, activation) triple carried from harvest.
+    // These were hardcoded to 0, which made the receipt unverifiable: a reader could not
+    // recompute floor(R * (1 - m0/m1)) and check it against delta_raw.
+    receipt.m0_bits = plan.pending_m0_bits;
     receipt.m1_bits = plan.last_multiplier_bits;
     receipt.delta_raw = delta_raw_settled;
     receipt.usdc_paid = to_pay;
-    receipt.tick_activation_ts = 0;
+    receipt.tick_activation_ts = plan.pending_tick_ts;
     receipt.settled_ts = now;
     receipt.bump = ctx.bumps.receipt;
 
@@ -1140,10 +1175,14 @@ describe("delta math against real AAPLx ticks", () => {
     assert.equal(computeDeltaRaw(1_000_000n, 1.02, 1.01), 0n);
   });
 
-  it("matches the hand-computed value for the 2026-08-08 tick", () => {
-    // 10.0 AAPLx, ratio 0.00060295..., 1e9 raw units
+  // [CRITIQUE E-1] Expected value corrected from 602_956 to 602_834. 602_956 was a
+  // hand-computed number that was never executed; it is 122 raw units too high and makes
+  // the holder end SHORT, which the assertion above is supposed to forbid. Recomputed:
+  // 1 - 1.0026642075893797/1.0032690125398187 = 0.0006028342776259743.
+  it("matches the recomputed value for the 2026-08-08 tick", () => {
+    // 10.0 AAPLx = 1e9 RAW units at 8 decimals; ratio 0.0006028342776259743
     const d = computeDeltaRaw(1_000_000_000n, 1.0026642075893797, 1.0032690125398187);
-    assert.closeTo(Number(d), 602_956, 2);
+    assert.closeTo(Number(d), 602_834, 2);
   });
 });
 ```
@@ -2785,7 +2824,7 @@ main().catch((e) => {
 
 Four independent layers. No single failure moves a holder's position.
 
-**Layer 1, Input validation (program).** `harvest` accepts no amount from anyone. Delta is recomputed from the mint's own extension bytes and the holder's own token account balance. A malicious keeper cannot ask for more, because it cannot ask at all. Implemented in `instructions/harvest.rs`. Prevents: keeper over-withdrawal.
+**Layer 1, Input validation (program).** `harvest` accepts no amount from anyone. Delta is recomputed from the mint's own extension bytes and the holder's own token account balance. A malicious keeper cannot ask for more, because it cannot ask at all. Implemented in `instructions/harvest.rs`. Prevents: keeper over-withdrawal **on the harvest leg only**, see "What the bound actually is" below, because `settle` is a different story.
 
 **Layer 2, The delegate cap (token program).** The holder approves a raw allowance of roughly 5% of their position. Even if every other layer failed at once, Token-2022 itself refuses to move more than the cap. Implemented in `components/EnrollPanel.tsx` and enforced by the token program. Prevents: total loss of position.
 
@@ -2794,6 +2833,62 @@ Four independent layers. No single failure moves a holder's position.
 **Layer 4, Graceful degradation (crank).** Every external dependency has a defined failure mode. Issuer API down means on-chain detection continues without a reason label. Jupiter down means the increment sits in the collection account and retries at the next open. RPC down means exponential backoff. DexScreener down means the income list degrades and nothing on the critical path breaks. Nothing is silently dropped, because `pending_raw` lives on-chain and the receipts feed shows "pending settlement".
 
 **Reverse splits get two layers of their own.** `compute_delta_raw` rejects `m1 < m0` outright, and the tick-watcher marks every non-Dividend event `skipped`. A reverse split is value-neutral in raw terms, so harvesting one would sell real exposure for nothing.
+
+<!-- [CRITIQUE E-4] Added. The four layers above are all about the HARVEST leg. The money
+     actually leaves on the SETTLE leg, which trusts two keeper-supplied numbers. Stating
+     the bound honestly is both more accurate and a better answer to a judge than an
+     absolute claim they can falsify by reading settle.rs. -->
+### What the bound actually is
+
+Say this plainly in the demo, the README and `disclosures.md`. A judge who opens
+`settle.rs` will find it in thirty seconds, and finding it themselves after hearing "your
+position is untouchable" is far worse than being told.
+
+**What the program genuinely guarantees.** Every one of these is enforced by code, not by
+the operator's good behaviour:
+
+1. The quantity leaving the holder's token account is computed on-chain from the mint's own
+   extension bytes and the holder's own balance. The keeper supplies no amount to `harvest`.
+2. It moves only when the multiplier has actually risen (`require!(m1 > m0)`), so no tick,
+   no movement, and a reverse split can never trigger one.
+3. It rounds down, so the holder is never left short of their pre-dividend exposure.
+4. A tick cannot be taken twice: the watermark advances inside the transferring instruction.
+5. Token-2022 refuses to move more than the approved delegate allowance, which is 5% of the
+   position at enrolment, across the plan's entire life. At a ~1% blended yield that is
+   roughly five years of dividends before the allowance is exhausted.
+6. The holder can revoke the delegate at any time, in one transaction, without our
+   cooperation.
+
+**What it does NOT guarantee, the honest gap.** `settle(usdc_amount, delta_raw_settled)`
+takes both numbers from the keeper. The program does not verify that the swap happened, that
+`usdc_amount` matches the market value of `delta_raw_settled`, or that any USDC arrived at
+all. Concretely, a hostile keeper could:
+
+- harvest correctly, swap the increment, and then call `settle` with a `usdc_amount` far
+  below the proceeds, keeping the difference; or
+- call `settle(0, pending_raw)`, which clears `pending_raw`, writes a receipt showing
+  `usdc_paid = 0`, and pays nothing; or
+- never call `settle`, leaving the increment in the keeper-held collection account.
+
+So the correct statement of the trust model is: **the keeper cannot touch your position, but
+it can steal your dividends.** Its maximum lifetime take is the smaller of (a) the sum of
+every dividend increment while you stay enrolled and (b) 5% of your position at enrolment ,
+and any theft is visible on-chain, because `pending_raw` and the receipt triple
+(`m0_bits`, `m1_bits`, `tick_activation_ts`, `delta_raw`) let anyone recompute what the
+payout should have been.
+
+**A second exposure the "a few minutes" framing hides.** Below the $1.00 payout floor,
+`accrued_usdc` is held in the *keeper's own USDC account*, not a PDA, until enough ticks
+accumulate to clear the floor. On a $200 position at ~1% blended yield with quarterly ticks
+that is roughly two quarters. The keeper's custody of user cash is measured in months for
+small holders, not minutes. The on-chain `accrued_usdc` field is the holder's only claim on
+it, and that field is written by the keeper.
+
+**Why we shipped it this way.** A PDA-owned collection account would require a CPI into the
+Jupiter aggregator with its full route account list, the most fragile thing available to
+put on a six-day critical path. The keeper-signed swap is the deliberate trade. The
+production fix is a settle that verifies proceeds against an on-chain price, or an atomic
+harvest-swap-settle route; both are named as future work rather than claimed as shipped.
 
 ---
 
@@ -2910,7 +3005,16 @@ No third-party API keys are required anywhere. Every data dependency is public a
 # Obtain from: Helius or Triton dashboard (free tier is sufficient). Required before: build.
 SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=placeholder
 
-# Keeper signer. Triggers harvest and settle, holds increments for minutes only.
+# [CRITIQUE E-3] Deploy authority. SEPARATE from the keeper and the demo wallet. This is
+# the wallet in `solana config get` that `anchor deploy` charges program rent to. Needs
+# ~3.5 SOL on mainnet (3 for rent, headroom for a retry) and is NOT recoverable while the
+# program stays deployed. Obtain from: an existing funded wallet, or solana-keygen new +
+# fund. Required before: deploy. Verified by the Phase 0 gate, not discovered on Monday.
+DEPLOY_KEYPAIR_PATH=
+
+# Keeper signer. Triggers harvest and settle. Holds the harvested increment from harvest
+# until settle, and holds sub-floor accrued USDC until the payout floor clears: which for
+# a small position is months, not minutes. See Section 17.
 # Obtain from: solana-keygen new -o keeper.json, then fund with ~0.5 SOL.
 # Required before: deploy.
 KEEPER_KEYPAIR_PATH=./keeper.json

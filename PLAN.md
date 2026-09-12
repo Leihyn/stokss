@@ -14,7 +14,7 @@
 | Deadline | 2026-09-18 20:00 UTC |
 | Build days | 6 (Sat 12 through Thu 17). Friday is submission day. |
 | Total estimated | 5.75 days |
-| Binding internal gate | **Mainnet harvest path live by end of Monday 15 Sep** |
+| Binding internal gate | **Mainnet crank armed and STRCx enrolled by Sun 13 Sep end of day. HARD STOP Mon 14 Sep 22:00 UTC.** <!-- [CRITIQUE E-2] was "end of Monday 15 Sep": 15 Sep 2026 is a TUESDAY. Monday is the 14th, and Aug 30 + 15d puts the expected STRCx tick on Mon 14 Sep, activating ~23:00-00:30 UTC. The old gate landed AFTER the event it exists to catch. --> |
 | Why that gate | STRCx has ticked every ~15 days (Jun 30, Jul 15, Jul 31, Aug 14, Aug 30). Next expected 14-15 Sep, with $335k liquidity. Capturing that real tick is the primary demo objective. |
 
 ### How to use this plan
@@ -43,7 +43,7 @@ When something fails, find the decision tree for it rather than improvising. The
 | 2 | Program instructions complete | 0.5d | 1 | Sun |
 | 3 | Crank | 0.75d | 2 | Sun |
 | 4 | Devnet rehearsal, full path | 0.25d | 3 | Sun |
-| 5 | **MAINNET GATE** | 0.5d | 4 | Mon |
+| 5 | **MAINNET GATE** | 0.5d | 4 | **Mon 14 Sep, done by 22:00 UTC** |
 | 6 | Web app: the problem screen | 1.0d | 2 | Mon-Tue |
 | 7 | Capture the real tick, proof route | 0.25d | 5 | Tue |
 | 8 | Buy front door and bill routing | 0.5d | 6 | Wed |
@@ -119,10 +119,40 @@ Expected: an address. Send ~$60 of SOL to it. Do not buy the xStocks yet; that i
 
 Commit: `chore: demo wallet generated`
 
+<!-- [CRITIQUE E-3] Added. ARCHITECTURE.md Section 24 row 5 requires "a wallet with about
+     3 SOL" to deploy, and Task 5.1 asserts "at least 3 SOL before deploying". Phase 0
+     previously funded only the keeper (0.5 SOL) and the demo wallet (~$60), and the gate
+     checked neither the deploy authority nor its balance. The shortfall would surface for
+     the first time on Monday at the mainnet gate, needing an out-of-band on-ramp at the
+     worst possible moment. -->
+### Task 0.5: Fund the DEPLOY authority (this is a separate wallet from the keeper)
+
+Copy from: ARCHITECTURE.md Section 24 row 5 (mainnet deploy) and Section 21 Credentials Needed.
+
+`anchor deploy` pays rent for the program account out of the wallet named in `Anchor.toml`
+/ `solana config get`, which is neither `keeper.json` nor `demo.json`. A program of this
+size needs roughly 3 SOL, and the rent is not recoverable while the program stays deployed.
+
+```bash
+solana config get                      # note "Keypair Path", this is the deploy authority
+solana address
+solana balance --url mainnet-beta
+```
+
+Expected: at least **3.5 SOL** (3 for rent plus headroom for a failed deploy and a retry).
+Fund it now, not on Monday.
+
+**Total mainnet SOL required before Monday: ~4.5 SOL** (3.5 deploy + 0.5 keeper + ~$60 demo).
+Source it today. An exchange withdrawal with KYC latency sitting at position zero of the
+critical path is the cheapest way to lose the STRCx window.
+
+Commit: `chore: deploy authority funded`
+
 ### Phase 0 gate
 
 - [ ] `anchor --version` prints `anchor-cli 0.30.1`
 - [ ] `solana balance -k keeper.json --url mainnet-beta` shows at least 0.4 SOL
+- [ ] `solana balance --url mainnet-beta` (the DEPLOY authority from `solana config get`) shows at least 3.5 SOL
 - [ ] The `getHealth` curl against the paid RPC returns `"ok"`
 - [ ] The demo wallet holds at least $50 of SOL
 - [ ] `.env` exists and is listed in `.gitignore`
@@ -199,7 +229,16 @@ Expected: all tests pass.
 **If `delta_preserves_scaled_exposure` fails with `after < before`:**
 1. You are rounding up somewhere. `compute_delta_raw` must use `.floor()`, never `.round()` or `.ceil()`.
 2. Check the ratio direction: it is `1.0 - (m0 / m1)`, not `1.0 - (m1 / m0)`.
-3. Re-run. If still failing, print `delta`, `before` and `after` for the AAPLx case and compare against the worked example in ARCHITECTURE.md Section 3 (`602_956` for a 10.0 position).
+3. Re-run. If still failing, print `delta`, `before` and `after` for the AAPLx case and compare against the worked example in ARCHITECTURE.md Section 3 (`602_834` for `R = 1_000_000_000` raw, i.e. a 10.0-unscaled-token position).
+
+<!-- [CRITIQUE E-1] The expected value in this step used to read 602_956. That number was
+     wrong by 122 raw units and produced `after < before`, the exact symptom this decision
+     tree tells you to chase. If you see 602_956 anywhere (an old checkout, a stale comment),
+     it is the bug, not the target. -->
+**If the test expects `602_956`:** the *test* is wrong, not the code. `602_956` is a stale
+hand-computed constant; the correct floor is `602_834`. Fix the assertion, do not touch
+`compute_delta_raw`, and do NOT proceed to the fixed-point rewrite below, you would be
+rewriting correct code to reproduce an arithmetic typo.
 
 **If `reverse_split_is_rejected` fails:**
 1. The `require!(m1 >= m0, MultiplierDecreased)` guard is missing or inverted.
@@ -374,6 +413,28 @@ Expected: an object with `reason: "Dividend"`, `multiplier`, `previousMultiplier
 
 Commit: `feat(crank): issuer API and DexScreener client`
 
+
+### Decision Point DT-3: the issuer API is unavailable (PRD risk R3, MEDIUM)
+
+Run: `curl -s "https://api.backed.fi/api/v2/public/assets/KOx/multiplier/history?network=Solana" | jq '.nodes | length'`
+Expected: a number greater than 0.
+
+**If it works:** continue to Task 3.4.
+
+**If you get a validation error mentioning `network`:**
+1. The `network` query parameter is required. Add `?network=Solana`.
+2. Re-run.
+
+**If you get a 5xx or a timeout:**
+1. Nothing on the critical path breaks. On-chain mint state is authoritative for both detection and delta; the API only supplies the event REASON and the backfill history.
+2. Confirm the degrade path works: with the API unreachable, `pollTicks` must still detect the change and record `reason = "Unknown"`.
+3. Decide what an Unknown reason does. Default is to SKIP, because harvesting a split would sell real exposure for nothing. Leave it skipping and alert instead.
+
+**If nothing works:**
+1. Hardcode the reason for the demo asset only, from its known cadence: STRCx pays semi-monthly and every one of its recorded events is a Dividend.
+2. Show a banner in the app saying event reasons are degraded.
+3. Continue from Task 3.4.
+
 ### Task 3.4: Market clock and queue store
 
 Files: `crank/src/market-clock.ts`, `crank/src/db.ts`
@@ -525,9 +586,29 @@ Commit: `test: full harvest path exercised on devnet`
 
 ---
 
-## Phase 5: MAINNET GATE (0.5d, Monday)
+## Phase 5: MAINNET GATE (0.5d, Monday 14 Sep, complete by 22:00 UTC)
 
 Everything before this was preparation. This is the deadline that matters.
+
+<!-- [CRITIQUE E-2] Monday is 14 September 2026, not the 15th, and the expected STRCx
+     activation is Mon 14 Sep ~23:00 UTC. This phase must be COMPLETE with one hour to
+     spare, not "by end of Monday". -->
+> **Why 22:00 UTC and not end of day.** Aug 30 + 15 days = Mon 14 Sep, and 98.3% of ticks
+> activate 23:00-00:30 UTC. Two mechanisms make a late arrival unrecoverable rather than
+> merely late:
+> 1. `tick-watcher` fires only on a *change between two observations* (`if (!prev) continue`).
+>    A crank started after activation records the post-tick state as "first sight" and will
+>    never harvest it.
+> 2. `enroll` snapshots the effective multiplier as `m0`. Enrolling after activation sets
+>    `m0 = M1`, so `delta` is 0 for that tick, permanently and by design.
+>
+> There is no catch-up path. If the crank is not running and STRCx not enrolled before
+> activation, the STRCx window is gone and the fallback is QQQx (20-30 Sep, after the
+> deadline, inside judging) or the devnet rig.
+>
+> **If Phase 4 is not green by Sun 13 Sep 20:00 UTC:** skip the devnet rehearsal, deploy to
+> mainnet, and rehearse on mainnet with a $5 position. A devnet rehearsal that costs the
+> mainnet window is a bad trade.
 
 ### Task 5.1: Deploy to mainnet
 
@@ -588,7 +669,7 @@ Commit: `chore: mainnet crank armed ahead of the STRCx window`
 
 ### Decision Point DT-8: the Monday gate is going to slip (PRD risk R8, CRITICAL)
 
-Check at 18:00 UTC Monday: is `[tick-watcher] STRCx` appearing in the log?
+Check at **14:00 UTC Monday 14 Sep** (was 18:00; moved earlier because the tick lands ~23:00 UTC the same day and every remediation below costs hours): is `[tick-watcher] STRCx` appearing in the log?
 
 **If yes:** the gate is met. Continue to Phase 6.
 
@@ -601,7 +682,8 @@ Check at 18:00 UTC Monday: is `[tick-watcher] STRCx` appearing in the log?
 1. Enroll from a script using the IDL directly, bypassing the wallet adapter entirely.
 2. The demo can show enrollment from the UI later; the tick cannot wait.
 
-**If nothing works by 23:00 UTC Monday:**
+**If nothing works by 21:00 UTC Monday 14 Sep** (two hours before expected activation, not
+after it):
 1. Accept that the STRCx window may be missed and switch the primary demo to the devnet rig.
 2. Keep the mainnet crank running anyway. QQQx is expected around 20-30 Sep, inside the judging window, and a real harvest captured then can be added to the README as evidence even after submission.
 3. Continue from Phase 6 with the devnet demo as primary.
@@ -668,6 +750,23 @@ curl -s "http://localhost:3000/api/backfill?symbol=KOx&rawAmount=100000000&price
 Expected: `tickCount` of 4 and a positive `totalUsd`, matching KOx's four real dividend ticks.
 
 Commit: `feat(web): portfolio and backfill routes`
+
+
+### Decision Point DT-6: DexScreener is unavailable (PRD risk R6, LOW)
+
+Run: `curl -s "https://api.dexscreener.com/tokens/v1/solana/XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp" | jq 'length'`
+Expected: a number greater than 0.
+
+**If it works:** continue to Task 6.3.
+
+**If it returns an empty array or a 5xx:**
+1. Prices become null. The portfolio route already handles this: `valueUsd` is null and the UI shows an em-less placeholder rather than a wrong number.
+2. Swap in a Jupiter quote for valuation: quote 1 raw unit of the mint against USDC and read `swapUsdValue`. Slower, rate-limited, but authoritative.
+
+**If nothing works:**
+1. Drop USD valuation from the demo entirely and show share counts and multipliers only.
+2. The backfill number then shows the delta in shares rather than dollars, which is less punchy but still true.
+3. Continue from Task 6.3.
 
 ### Task 6.3: The landing page and enrollment
 
@@ -871,25 +970,96 @@ At T-30 minutes: code freeze. No changes.
 
 ---
 
-## Section 4: Decision Tree Index
+## Section 4: Objection Handling
 
-| Tree | Covers | PRD risk | Severity | Phase |
-|---|---|---|:---:|:---:|
-| DT-1 | No real tick before the deadline | R1 | CRITICAL | 5 |
-| DT-2 | Delta math wrong | R2 | CRITICAL | 1 |
-| DT-4 | Jupiter unavailable or no route | R4 | HIGH | 3 |
-| DT-5 | RPC rate limits | R5 | HIGH | 3 |
-| DT-7 | Tick fired unrecorded | R7 | HIGH | 7 |
-| DT-8 | Monday gate slipping | R8 | CRITICAL | 5 |
-| DT-12 | Scope creep | R12 | HIGH | 8 |
-| DT-14 | Deployment does not survive to 2 Oct | R14 | HIGH | 9 |
-| DT-15 | Anchor build fails on Token-2022 | build risk | HIGH | 2 |
+These four are referenced by the PRD risk register as decision trees, but they are not build
+failures. They fire in front of a judge, so the branch is what you say, not what you run.
+Rehearse them in Phase 9 alongside the demo.
 
-Nine trees against eight CRITICAL and HIGH risks in the PRD register.
+### Decision Point DT-9: "this is a feature, not an app" (PRD risk R9, MEDIUM)
+
+Trigger: a judge says stokss is one mechanic rather than a product.
+
+**Do not argue that it is bigger than it looks.** It is one mechanic, deliberately.
+
+1. Point at the rules text: "Pick one wedge and make it excellent." A single mechanic is what
+   this event asked for, so the objection is aimed at the brief, not at us.
+2. Then show the front door. Income stocks ranked by dividends measured on-chain, buy in one
+   click, enroll on success. That makes it a place you keep your income stocks, not a utility
+   bolted to a wallet.
+3. If they still push: the honest answer is that a product which does one thing correctly with
+   real money on mainnet beats four things that only work in a recording.
+
+### Decision Point DT-10: "isn't reinvestment good, why would I want cash" (PRD risk R10, MEDIUM)
+
+Trigger: a judge argues DRIP is a feature and cash is worse.
+
+**Do not defend income as a preference.** You will lose that argument, and it is the weaker case.
+
+1. Lead with tax. The multiplier tick is a distribution you are taxed on and never receive. You
+   owe cash on money you cannot spend. That is a liability, not a taste.
+2. Second, optionality. Reinvesting into the same stock is a concentration decision an issuer
+   made for you. stokss gives the choice back: cash, another asset, or a bill.
+3. Third, and only if pressed: you can still reinvest. Point the destination at the same stock
+   and stokss does nothing, which is exactly today's behaviour. We are adding a switch, not
+   removing one.
+4. Never quote a yield percentage as the pitch. It is about 1% blended and it is not the point.
+   Quoting it is a drift tripwire in the thesis.
+
+### Decision Point DT-11: another submission shipped the same mechanic (PRD risk R11, LOW)
+
+Trigger: the gallery opens and something similar is there.
+
+1. Do not claim novelty. The field was never observable, so novelty was never the defence.
+2. Compete on evidence instead: a real mainnet corporate action, harvested and settled, with an
+   explorer link a judge can open. That is hard to match in six days and it is checkable.
+3. If theirs also ran on mainnet: compete on correctness. Show the delta test against five real
+   historical ticks, the idempotence test, and the reverse-split rejection.
+
+### Decision Point DT-13: "why would I trust your keeper" (PRD risk R13, MEDIUM)
+
+Trigger: a judge or user notices the increment passes through a keeper-held account.
+
+1. Answer with the bound, not with reassurance. The program computes delta itself from mint
+   state and the holder's balance. `harvest` takes no amount argument; check the IDL.
+2. Then the second bound: the delegate is capped at roughly 5% of the position, enforced by the
+   token program, not by us. Show it on screen with `spl-token display`.
+3. Then the honest limitation: between harvest and settle, the increment sits in a keeper
+   account for minutes. That is a real trust assumption and we say so in `disclosures.md`.
+4. State the fix we did not build: an atomic route that swaps inside the same transaction, which
+   needs a Jupiter CPI. We chose not to put that on the critical path six days out. Say that
+   plainly rather than pretending the design is finished.
+
 
 ---
 
-## Section 5: Concerns Verification Map
+## Section 5: Decision Tree Index
+
+| Tree | Covers | PRD risk | Severity | Where |
+|---|---|---|:---:|:---:|
+| DT-1 | No real tick before the deadline | R1 | CRITICAL | Phase 5 |
+| DT-2 | Delta math wrong | R2 | CRITICAL | Phase 1 |
+| DT-3 | Issuer API unavailable | R3 | MEDIUM | Phase 3 |
+| DT-4 | Jupiter unavailable or no route | R4 | HIGH | Phase 3 |
+| DT-5 | RPC rate limits | R5 | HIGH | Phase 3 |
+| DT-6 | DexScreener unavailable | R6 | LOW | Phase 6 |
+| DT-7 | Tick fired unrecorded | R7 | HIGH | Phase 7 |
+| DT-8 | Monday gate slipping | R8 | CRITICAL | Phase 5 |
+| DT-9 | "A feature, not an app" | R9 | MEDIUM | Section 4 |
+| DT-10 | "Isn't reinvestment good" | R10 | MEDIUM | Section 4 |
+| DT-11 | A duplicate submission | R11 | LOW | Section 4 |
+| DT-12 | Scope creep | R12 | HIGH | Phase 8 |
+| DT-13 | Keeper trust | R13 | MEDIUM | Section 4 |
+| DT-14 | Deployment does not survive to 2 Oct | R14 | HIGH | Phase 9 |
+| DT-15 | Anchor build fails on Token-2022 | build risk | HIGH | Phase 2 |
+
+Fifteen trees against fourteen PRD risks plus one build risk. Every `DT-` reference in PRD.md Section 7 resolves to a definition here.
+
+Found by the critique pass: six of these (DT-3, 6, 9, 10, 11, 13) were referenced by the PRD and had no definition. The plan's own metric only counted trees against CRITICAL and HIGH risks, so it did not catch the dangling references.
+
+---
+
+## Section 6: Concerns Verification Map
 
 Every [C] concern from `concerns.md` has a phase gate that verifies it.
 

@@ -3,3 +3,6 @@ target/
 .env
 *.tmp
 .conductor-lock/
+target/
+crank.db
+crank.db-*

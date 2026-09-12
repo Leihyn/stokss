@@ -43,7 +43,7 @@
     "network_mode": "devnet-first, mainnet read-only"
   },
   "pipeline": {
-    "current_phase": "url_preverify",
+    "current_phase": "build",
     "phases": {
       "intel": {
         "status": "complete",
@@ -67,9 +67,9 @@
         "completed_at": "2026-09-12T11:07:35.889312+00:00"
       },
       "url_preverify": {
-        "status": "pending",
-        "dispatched_at": null,
-        "completed_at": null
+        "status": "complete",
+        "dispatched_at": "2026-09-12T12:32:40.645527+00:00",
+        "completed_at": "2026-09-12T12:32:40.645527+00:00"
       },
       "build": {
         "status": "pending",
@@ -164,7 +164,15 @@
   "credentials_location": "~/.claude/credentials/pipeline-credentials.env",
   "confirmed_urls": {
     "solana_rpc_devnet": "configured and health-checked ok",
-    "solana_rpc_mainnet_readonly": "configured and health-checked ok"
+    "solana_rpc_mainnet_readonly": "configured and health-checked ok",
+    "Solana RPC (devnet, execution)": "ok",
+    "Solana RPC (mainnet, read-only)": "ok",
+    "Token-2022 mint read (AAPLx)": "scaledUiAmountConfig present",
+    "Jupiter quote": "out=3339942 usd=3.3394",
+    "Issuer API (multiplier history)": "4 events",
+    "Issuer API (asset catalogue)": "page ok, hasNext=True",
+    "DexScreener": "1 pairs",
+    "Hackathon page (live)": "reachable"
   },
   "existing_research": {
     "source": "ideate skill, 2026-09-12",
@@ -215,12 +223,12 @@
   "continuation_manifest": {
     "continuation_count": 0,
     "max_continuations": 5,
-    "last_completed_phase": "critique",
-    "next_expected_phase": "url_preverify",
+    "last_completed_phase": "url_preverify",
+    "next_expected_phase": "build",
     "spawned_at": "2026-09-12T08:15:15.528400+00:00"
   },
   "created_at": "2026-09-12T08:15:15.528400+00:00",
-  "updated_at": "2026-09-12T12:31:21.938528+00:00",
+  "updated_at": "2026-09-12T12:32:40.645527+00:00",
   "intelState": {
     "status": "complete",
     "sourceCount": 21,

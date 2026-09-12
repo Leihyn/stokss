@@ -1,0 +1,42 @@
+{
+  "Solana RPC (devnet, execution)": {
+    "priority": "P0",
+    "result": "ok",
+    "ok": true
+  },
+  "Solana RPC (mainnet, read-only)": {
+    "priority": "P0",
+    "result": "ok",
+    "ok": true
+  },
+  "Token-2022 mint read (AAPLx)": {
+    "priority": "P0",
+    "result": "scaledUiAmountConfig present",
+    "ok": true
+  },
+  "Jupiter quote": {
+    "priority": "P0",
+    "result": "out=3339942 usd=3.3394",
+    "ok": true
+  },
+  "Issuer API (multiplier history)": {
+    "priority": "P1",
+    "result": "4 events",
+    "ok": true
+  },
+  "Issuer API (asset catalogue)": {
+    "priority": "P1",
+    "result": "page ok, hasNext=True",
+    "ok": true
+  },
+  "DexScreener": {
+    "priority": "P2",
+    "result": "1 pairs",
+    "ok": true
+  },
+  "Hackathon page (live)": {
+    "priority": "P1",
+    "result": "reachable",
+    "ok": true
+  }
+}

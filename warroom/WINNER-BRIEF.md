@@ -1,10 +1,30 @@
-# WINNER-BRIEF — stokss
+# WINNER-BRIEF: stokss
 
 ## Thesis
 Tokenized stocks on Solana pay no cash dividends. When a company pays, Backed reinvests the cash and raises a multiplier on the Token-2022 mint, so the holder's economic exposure grows and nothing spendable ever arrives. $891M of dividend-paying xStocks is outstanding on Solana and $8.72M of dividends were paid into it over the last 12 months across 110 ticks, none of it as cash. stokss is the one rule that fixes it: **when a tokenized stock's on-chain multiplier ticks up, sell exactly that increment at the next market open and route the cash where the holder chose, their wallet or a bill.** If raw balance is R and the multiplier moves M0 to M1, stokss sells `delta = R * (1 - M0/M1)`. The holder ends with the identical share count and the dividend in USDC.
 
 ## Track
 Single main track, $100,000. Wedge: "Credit and yield: borrowing against stocks, dividends, structured products", with a second foot in "Infrastructure: corporate actions". The organizers list dividends and corporate actions by name, and no product serves either.
+
+### Thesis fields
+(PROVISIONAL, derived by forge 2026-09-12 from the ideate brief above, which predates this
+six-field format. Amend only by appending `AMEND-{n} | {date} | source | {field} | old -> new
+| why`. Never edit a field in place, and never edit the thesis to make a gate pass.)
+
+1. WINNING ARGUMENT, An entire asset class silently lost cash dividends, and one on-chain
+   field is enough to give them back.
+2. EVIDENCE, 583 multiplier ticks on record, 366 in the last 90 days, 98.3% activating while
+   the US market is closed. Every one reinvested, none paid as cash. Confirmed by the issuer's
+   docs, Kraken's FAQ, and all 583 API events.
+3. DEMO OBLIGATION, The judge WITNESSES a real mainnet dividend becoming real cash: the tick
+   detected on-chain, the increment sold at the open, USDC arriving, with a transaction they
+   can open in an explorer.
+4. HERO FLOW, Enroll a holding with one capped signature, a real tick fires, USDC arrives.
+5. INVARIANTS, Never move more than the increment. Never fabricate a corporate action or
+   present devnet as mainnet. Every number shown traces to on-chain state or the issuer's
+   public API. Round down; dust belongs to the holder.
+6. DRIFT TRIPWIRES, Becoming a portfolio dashboard. Becoming an index basket. Leading the
+   pitch with yield percentages. Adding a vault with share accounting.
 
 ## Scope Addition (Checkpoint 2, user-approved)
 **Buy front door.** The app includes a one-click Jupiter buy for the ~29 dividend-paying xStocks that have liquidity, so stokss is a destination you hold your income stocks in rather than a background utility attached to a wallet. Budget roughly 3 hours. It also completes the demo loop: buy, hold, get paid. It is NOT a vault or an index basket; no share accounting, no rebalancing, no custody. Cut this before cutting the harvest.

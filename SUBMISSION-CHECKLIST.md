@@ -1,4 +1,4 @@
-# SUBMISSION-CHECKLIST — Stocklana
+# SUBMISSION-CHECKLIST: Stocklana
 
 Platform: hackathons.solana.com (not Devpost/DoraHacks/Devfolio). Simple form, few required fields, so the risk is not the form. The risk is link rot during a two-week judging window.
 

@@ -42,7 +42,7 @@
     "binding_gate": "mainnet dividend-harvest path live by end of Mon 15 Sep, ahead of expected STRCx tick ~14-15 Sep"
   },
   "pipeline": {
-    "current_phase": "forge",
+    "current_phase": "critique",
     "phases": {
       "intel": {
         "status": "complete",
@@ -56,9 +56,9 @@
         "note": "pre-supplied by ideate: warroom/WINNER-BRIEF.md (documented ideate->conductor handoff)"
       },
       "forge": {
-        "status": "pending",
-        "dispatched_at": null,
-        "completed_at": null
+        "status": "complete",
+        "dispatched_at": "2026-09-12T08:30:20.637727+00:00",
+        "completed_at": "2026-09-12T09:03:32.538402+00:00"
       },
       "critique": {
         "status": "pending",
@@ -147,6 +147,14 @@
       "research_path": "/Users/machine/Desktop/dev/stokss/research/research-brief.md",
       "config_path": "/Users/machine/Desktop/dev/stokss/config.json",
       "state_path": "/Users/machine/Desktop/dev/stokss/intel-state.json"
+    },
+    "forge": {
+      "prd_path": "/Users/machine/Desktop/dev/stokss/PRD.md",
+      "architecture_path": "/Users/machine/Desktop/dev/stokss/ARCHITECTURE.md",
+      "plan_path": "/Users/machine/Desktop/dev/stokss/PLAN.md",
+      "state_path": "/Users/machine/Desktop/dev/stokss/.forge-state.json",
+      "env_example_path": "/Users/machine/Desktop/dev/stokss/.env.example",
+      "observables_path": "/Users/machine/Desktop/dev/stokss/FEATURE-OBSERVABLES.md"
     }
   },
   "credentials_location": "~/.claude/credentials/pipeline-credentials.env",
@@ -180,7 +188,7 @@
   },
   "dispatch_context": {
     "mode": "fresh",
-    "target_skill": null,
+    "target_skill": "hackathon-forge",
     "attempt": 1,
     "max_attempts": 3,
     "working_dir": "/Users/machine/Desktop/dev/stokss",
@@ -192,12 +200,12 @@
   "continuation_manifest": {
     "continuation_count": 0,
     "max_continuations": 5,
-    "last_completed_phase": "intel",
-    "next_expected_phase": "forge",
+    "last_completed_phase": "forge",
+    "next_expected_phase": "critique",
     "spawned_at": "2026-09-12T08:15:15.528400+00:00"
   },
   "created_at": "2026-09-12T08:15:15.528400+00:00",
-  "updated_at": "2026-09-12T08:29:51.292771+00:00",
+  "updated_at": "2026-09-12T09:03:32.538402+00:00",
   "intelState": {
     "status": "complete",
     "sourceCount": 21,
@@ -215,7 +223,29 @@
     "winner_brief": "/Users/machine/Desktop/dev/stokss/warroom/WINNER-BRIEF.md",
     "winner": "stokss \u2014 sell the xStocks multiplier increment at the next market open and route the cash to the holder"
   },
-  "forgeState": null,
+  "forgeState": {
+    "status": "complete",
+    "projectName": "stokss",
+    "stack": [
+      "Rust",
+      "TypeScript",
+      "Anchor 0.30.1",
+      "Next.js 15",
+      "Node"
+    ],
+    "hasFrontend": true,
+    "hasContracts": true,
+    "prdLines": 584,
+    "architectureLines": 3043,
+    "planLines": 902,
+    "project_type": "full-stack",
+    "featureObservablesPath": "/Users/machine/Desktop/dev/stokss/FEATURE-OBSERVABLES.md",
+    "crossReview": {
+      "claim": "thesis-2",
+      "reviewer": "claude",
+      "verdict": "AGREE"
+    }
+  },
   "critiqueState": null,
   "buildState": null,
   "debugState": null,

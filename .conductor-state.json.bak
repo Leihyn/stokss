@@ -42,12 +42,12 @@
     "binding_gate": "mainnet dividend-harvest path live by end of Mon 15 Sep, ahead of expected STRCx tick ~14-15 Sep"
   },
   "pipeline": {
-    "current_phase": "intel",
+    "current_phase": "forge",
     "phases": {
       "intel": {
-        "status": "running",
+        "status": "complete",
         "dispatched_at": "2026-09-12T08:20:42.055961+00:00",
-        "completed_at": null
+        "completed_at": "2026-09-12T08:29:51.292771+00:00"
       },
       "warroom": {
         "status": "skipped",
@@ -56,8 +56,8 @@
         "note": "pre-supplied by ideate: warroom/WINNER-BRIEF.md (documented ideate->conductor handoff)"
       },
       "forge": {
-        "status": "pending",
-        "dispatched_at": null,
+        "status": "running",
+        "dispatched_at": "2026-09-12T08:30:20.637727+00:00",
         "completed_at": null
       },
       "critique": {
@@ -142,7 +142,13 @@
       }
     }
   },
-  "artifacts": {},
+  "artifacts": {
+    "intel": {
+      "research_path": "/Users/machine/Desktop/dev/stokss/research/research-brief.md",
+      "config_path": "/Users/machine/Desktop/dev/stokss/config.json",
+      "state_path": "/Users/machine/Desktop/dev/stokss/intel-state.json"
+    }
+  },
   "credentials_location": "~/.claude/credentials/pipeline-credentials.env",
   "confirmed_urls": {},
   "existing_research": {
@@ -174,7 +180,7 @@
   },
   "dispatch_context": {
     "mode": "fresh",
-    "target_skill": null,
+    "target_skill": "hackathon-forge",
     "attempt": 1,
     "max_attempts": 3,
     "working_dir": "/Users/machine/Desktop/dev/stokss",
@@ -186,13 +192,24 @@
   "continuation_manifest": {
     "continuation_count": 0,
     "max_continuations": 5,
-    "last_completed_phase": null,
-    "next_expected_phase": "intel",
+    "last_completed_phase": "intel",
+    "next_expected_phase": "forge",
     "spawned_at": "2026-09-12T08:15:15.528400+00:00"
   },
   "created_at": "2026-09-12T08:15:15.528400+00:00",
-  "updated_at": "2026-09-12T08:20:42.055961+00:00",
-  "intelState": null,
+  "updated_at": "2026-09-12T08:30:20.637727+00:00",
+  "intelState": {
+    "status": "complete",
+    "sourceCount": 21,
+    "quality_avg": 4.2,
+    "competitor_depth": 2,
+    "key_findings": [
+      "event has zero public footprint; field saturation UNPRICED",
+      "USDC-dividend claim rejected as circular reporting; reinvestment-only confirmed by 3 primary sources",
+      "price convention: DEX/Jupiter quote per RAW token = share price x multiplier",
+      "do not headline a total-market dollar figure; $891M vs $684M unresolved, different universes"
+    ]
+  },
   "warroomState": {
     "source": "ideate",
     "winner_brief": "/Users/machine/Desktop/dev/stokss/warroom/WINNER-BRIEF.md",

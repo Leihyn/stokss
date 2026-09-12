@@ -1,7 +1,7 @@
-# STOCKLANA — Research Brief
+# STOCKLANA: Research Brief
 
 **Compiled:** 2026-09-12
-**Intel Depth:** ID 8 (Deep) — reallocated, see note
+**Intel Depth:** ID 8 (Deep), reallocated, see note
 **Sources:** Web research, official hackathon page, xStocks primary docs, Kraken support, on-chain Solana RPC, xStocks public API, DexScreener, Jupiter
 **Prior work:** `ideate` (2026-09-12) verified dependencies and ran the collision search. Base-layer searches were not repeated. Depth was spent on the four gaps ideate could not see: late rule changes, judge/organizer signals, build-in-progress chatter, and competitor products shipped in the last two weeks.
 
@@ -39,7 +39,7 @@
 | Platform | Not published |
 | Content notes | Video is one of three accepted link types, not mandatory |
 
-No explicit demo video requirements published [A1 — official page]. **ASSUMED** 300s cap for planning. We are shipping video plus live app plus repo (demoFormat=both), so the assumption is not load-bearing.
+No explicit demo video requirements published [A1, official page]. **ASSUMED** 300s cap for planning. We are shipping video plus live app plus repo (demoFormat=both), so the assumption is not load-bearing.
 
 ---
 
@@ -101,7 +101,7 @@ No workshop schedule published. No office hours, no sessions, no speakers found.
 
 Full verified dependency list lives in `~/.claude/skills/hackathon-briefs/stocklana.md` §8 and is not repeated. Key points for the build:
 
-- **Token-2022 Scaled UI Amount** is the mechanism xStocks uses on Solana for corporate actions. The mint carries `multiplier`, `newMultiplier`, and `newMultiplierEffectiveTimestamp`. Verified on the AAPLx mainnet mint [A1 — on-chain read].
+- **Token-2022 Scaled UI Amount** is the mechanism xStocks uses on Solana for corporate actions. The mint carries `multiplier`, `newMultiplier`, and `newMultiplierEffectiveTimestamp`. Verified on the AAPLx mainnet mint [A1, on-chain read].
 - Mints also carry `permanentDelegate` and `pausableConfig`, both issuer-held, plus `confidentialTransferMint` and an inactive `transferHook`. `defaultAccountState: initialized`, so transfers are permissionless. **The issuer can seize and pause.** Disclose this in the submission.
 - Decimals are 8 on the mints checked.
 - **Price convention (verified this session):** DexScreener and Jupiter quote price per RAW token, which equals share price × multiplier. Confirmed against four mints by dividing out the multiplier and recovering a sane share price (AAPLx $332.44, KOx $87.67, NFLXx $76.17 post 10:1 split, TQQQx $71.55). Any valuation code must use raw × price-per-raw, never raw × share price.
@@ -128,7 +128,7 @@ Full verified dependency list lives in `~/.claude/skills/hackathon-briefs/stockl
 |---------|---------|---|------|-------|
 | xStocks (Backed) | The asset itself, 732 mints on Solana | Deep, we read mint state and their public API | docs.xstocks.fi | Public endpoints need no auth. xChange RFQ needs an onboarded account we cannot get. |
 | Jupiter | Swap routing for the harvest and the buy front door | Deep | dev.jup.ag | lite-api rate limits around 60 req/min. Back off. |
-| Raydium | Where the actual xStock liquidity sits (CLMM) | Indirect, via Jupiter | — | AAPLx/USDC routes here |
+| Raydium | Where the actual xStock liquidity sits (CLMM) | Indirect, via Jupiter | none | AAPLx/USDC routes here |
 | Kamino | Tokenized-stock lending, 82.6% share | Not integrated | docs.kamino.finance | Adjacent, not a dependency |
 | Pyth | Equity, 24/7 index, and redemption-rate feeds | Not on the critical path | docs.pyth.network | Hermes REST returned 401 today without a key |
 | Token-2022 | Scaled UI Amount extension | Deep | solana.com/docs/tokens/extensions | `spl-token update-ui-amount-multiplier` verified in CLI 5.4.0 |
@@ -150,7 +150,7 @@ Native Solana primitives this event can be won on:
 ## Competitor Landscape
 
 **BOTTOM LINE:** The field is unobservable, and unusually, so is any indirect signal. Saturation is UNPRICED.
-**EVIDENCE:** Submissions hidden on the site [A1]. Showcase page returns 0 projects [A1]. Five targeted searches for "Stocklana" across news, X, devlogs and general web returned zero results referencing this event by name [B2 — absence of evidence across multiple engines]. No Discord or Telegram link is published for the event. No judges named anywhere.
+**EVIDENCE:** Submissions hidden on the site [A1]. Showcase page returns 0 projects [A1]. Five targeted searches for "Stocklana" across news, X, devlogs and general web returned zero results referencing this event by name [B2, absence of evidence across multiple engines]. No Discord or Telegram link is published for the event. No judges named anywhere.
 **CONFIDENCE:** High that the signal is absent. Zero confidence about what the 14 submissions contain.
 **SO WHAT:** Shift weight to defences that survive duplication: a mechanic that is hard to copy in six days, a real mainnet transaction as evidence, and execution polish. Do not rely on "nobody else thought of this."
 
@@ -177,10 +177,10 @@ Registered-to-submitted ratios on comparable events suggest a final field well b
 
 Autonomous run: no Discord or X review was performed, and no event community channel exists to review. These are verbatim quotes from primary documentation and one third-party product blog, which is what is available.
 
-1. *"Rather than distributing cash, the dividend is reinvested into additional shares of the same stock."* — xStocks docs, Dividends and Stock Splits, docs.xstocks.fi/docs/dividends-and-stock-splits [A1]
-2. *"There is no separate cash credit or line item, the increase appears as a higher effective token balance in your portfolio."* — Kraken xStocks FAQ, support.kraken.com/articles/xstocks-faq [A1]
-3. *"When the underlying stock pays a dividend, the issuer doesn't airdrop tokens to thousands of wallets. It updates a single number, a multiplier, on the mint account itself."* — SolanaRWA, "On-Chain Dividends Are Silent. Your Tax Bill Isn't.", dev.to [B2]
-4. *"As rebasing tokens, xStocks cannot integrate natively with DeFi protocols. Everything from AMMs to lending markets would be thrown off by referencing a token whose supply and balances are subject to periodic expansion."* — xStocks docs, Wrapped xStocks [A1]
+1. *"Rather than distributing cash, the dividend is reinvested into additional shares of the same stock."*, xStocks docs, Dividends and Stock Splits, docs.xstocks.fi/docs/dividends-and-stock-splits [A1]
+2. *"There is no separate cash credit or line item, the increase appears as a higher effective token balance in your portfolio."*, Kraken xStocks FAQ, support.kraken.com/articles/xstocks-faq [A1]
+3. *"When the underlying stock pays a dividend, the issuer doesn't airdrop tokens to thousands of wallets. It updates a single number, a multiplier, on the mint account itself."*, SolanaRWA, "On-Chain Dividends Are Silent. Your Tax Bill Isn't.", dev.to [B2]
+4. *"As rebasing tokens, xStocks cannot integrate natively with DeFi protocols. Everything from AMMs to lending markets would be thrown off by referencing a token whose supply and balances are subject to periodic expansion."*, xStocks docs, Wrapped xStocks [A1]
 
 **GAP:** No end-user complaints captured. Nobody is publicly complaining that tokenized stocks pay no cash, which is a double-edged finding: the problem is real and measurable on-chain, but it is not a problem users are loudly asking to have solved. Address this in the pitch by leading with the tax liability rather than with income preference.
 
@@ -281,9 +281,9 @@ Single track, so there is no multi-track arbitrage on this event. The equivalent
 Unmeasurable for this event. Structurally likely crowded, from the rules text itself: trading terminals, DCA apps, index baskets, borrow-against-stocks, card and spending demos. The rules name these five wedges to 177 people.
 
 ### 2. Broken Dependencies
-- **xChange atomic RFQ** — needs an onboarded Backed client account. Kills anything requiring primary issuance or redemption.
-- **Pyth Hermes REST** — 401 without a key today. Kills anything needing an off-hours mark on a deadline.
-- **The 703 illiquid mints** — 732 exist, 29 are tradeable. Kills any product whose value depends on the long tail.
+- **xChange atomic RFQ**, needs an onboarded Backed client account. Kills anything requiring primary issuance or redemption.
+- **Pyth Hermes REST**, 401 without a key today. Kills anything needing an off-hours mark on a deadline.
+- **The 703 illiquid mints**, 732 exist, 29 are tradeable. Kills any product whose value depends on the long tail.
 
 ### 3. Already Built
 - Index baskets: Symmetry, basketsolana.xyz

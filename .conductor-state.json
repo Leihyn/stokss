@@ -39,7 +39,8 @@
     "copilot_pat_available": false,
     "project_name": "stokss",
     "mainnet_wallet": "user will fund (~$60-100 SOL + xStocks) before Mon 15 Sep",
-    "binding_gate": "mainnet dividend-harvest path live by end of Mon 15 Sep, ahead of expected STRCx tick ~14-15 Sep"
+    "binding_gate": "mainnet dividend-harvest path live by end of Mon 15 Sep, ahead of expected STRCx tick ~14-15 Sep",
+    "network_mode": "devnet-first, mainnet read-only"
   },
   "pipeline": {
     "current_phase": "url_preverify",
@@ -161,7 +162,10 @@
     }
   },
   "credentials_location": "~/.claude/credentials/pipeline-credentials.env",
-  "confirmed_urls": {},
+  "confirmed_urls": {
+    "solana_rpc_devnet": "configured and health-checked ok",
+    "solana_rpc_mainnet_readonly": "configured and health-checked ok"
+  },
   "existing_research": {
     "source": "ideate skill, 2026-09-12",
     "brief": "~/.claude/skills/hackathon-briefs/stocklana.md",
@@ -187,6 +191,14 @@
       "modification": "ADD BUY FRONT DOOR: one-click Jupiter buy for dividend-paying xStocks so the app is a destination, not a wallet utility (~3h, makes the demo a full loop)",
       "name": "stokss",
       "name_rationale": "user-chosen; replaces working title Coupon, which collides with discount-voucher reading"
+    },
+    "post_forge_credentials": {
+      "answered": true,
+      "answered_at": "2026-09-12T12:31:21.938528+00:00",
+      "rpc": "existing Helius key found on this machine at ~/Desktop/dev/github_repos/Privacy/stealthsol/frontend/.env.local; health-checked ok on BOTH mainnet and devnet; written to stokss/.env (mode 600, gitignored). Phase 0 Task 0.3 is done.",
+      "network": "DEVNET FIRST (user decision). Deploy, keeper and demo funding become faucet SOL, so the ~4 SOL mainnet prerequisite leaves the critical path. Mainnet reads stay and are free.",
+      "cuts": "all four critique cuts accepted as defaults",
+      "cost_accepted": "a real mainnet harvest with an explorer link, the highest-value evidence in the submission. Mainnet cutover retained as PLAN Section 7 if funding lands before Friday."
     }
   },
   "dispatch_context": {
@@ -208,7 +220,7 @@
     "spawned_at": "2026-09-12T08:15:15.528400+00:00"
   },
   "created_at": "2026-09-12T08:15:15.528400+00:00",
-  "updated_at": "2026-09-12T11:07:35.889312+00:00",
+  "updated_at": "2026-09-12T12:31:21.938528+00:00",
   "intelState": {
     "status": "complete",
     "sourceCount": 21,

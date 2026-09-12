@@ -14,8 +14,27 @@
 | Deadline | 2026-09-18 20:00 UTC |
 | Build days | 6 (Sat 12 through Thu 17). Friday is submission day. |
 | Total estimated | 5.75 days |
-| Binding internal gate | **Mainnet crank armed and STRCx enrolled: HARD STOP Mon 14 Sep 22:00 UTC.** Sun 13 Sep 20:00 UTC is the CHECKPOINT that triggers the cut list, not a second gate. <!-- [CRITIQUE E-2] was "end of Monday 15 Sep": 15 Sep 2026 is a TUESDAY. Monday is the 14th, and Aug 30 + 15d puts the expected STRCx tick on Mon 14 Sep, activating ~23:00-00:30 UTC. The old gate landed AFTER the event it exists to catch. --> <!-- [CRITIQUE C-3] The E-2 fix wrote "Sun 13 Sep end of day" here and in concerns.md but left Section 2 and the Phase 5 header reading "Mon 14 Sep, done by 22:00 UTC". Two gates one day apart in one document, and a builder working top to bottom follows the phase schedule. One gate now: Monday 22:00 UTC. Sunday is a checkpoint with teeth (see C-4 cut list below), which is what the Sunday date was actually for. --> |
+| Binding internal gate | **Devnet harvest path running AND the crank watching real mainnet mints: HARD STOP Mon 14 Sep 22:00 UTC.** (Checkpoint 3: devnet first, so the gate is the devnet harvest plus free mainnet reads, not a mainnet harvest.) Sun 13 Sep 20:00 UTC is the CHECKPOINT that triggers the cut list, not a second gate. <!-- [CRITIQUE E-2] was "end of Monday 15 Sep": 15 Sep 2026 is a TUESDAY. Monday is the 14th, and Aug 30 + 15d puts the expected STRCx tick on Mon 14 Sep, activating ~23:00-00:30 UTC. The old gate landed AFTER the event it exists to catch. --> <!-- [CRITIQUE C-3] The E-2 fix wrote "Sun 13 Sep end of day" here and in concerns.md but left Section 2 and the Phase 5 header reading "Mon 14 Sep, done by 22:00 UTC". Two gates one day apart in one document, and a builder working top to bottom follows the phase schedule. One gate now: Monday 22:00 UTC. Sunday is a checkpoint with teeth (see C-4 cut list below), which is what the Sunday date was actually for. --> |
 | Why that gate | STRCx has ticked every ~15 days (Jun 30, Jul 15, Jul 31, Aug 14, Aug 30). Next expected 14-15 Sep, with $335k liquidity. Capturing that real tick is the primary demo objective. |
+
+
+> **[CHECKPOINT 3 DECISION, 2026-09-12] DEVNET FIRST.** The build deploys to devnet, not
+> mainnet. Deploy authority, keeper and demo funding all become faucet SOL, so the ~4 SOL
+> prerequisite is gone and Phase 0 no longer has an exchange-withdrawal dependency at
+> position zero.
+>
+> **Mainnet reads stay, and they are free.** No SOL is required to read a mint account or
+> call the issuer's public API. The crank still watches all 732 real mainnet mints and still
+> detects real corporate actions; the calendar, income-stocks and backfill screens still run
+> on real production data. Only `harvest` and `settle` execute against a fixture mint.
+>
+> **The cost, stated plainly:** we give up the strongest single piece of evidence in the
+> submission, a real mainnet dividend harvested end to end with an explorer link a judge can
+> open. The demo must therefore label the devnet harvest as devnet, every time it appears,
+> and put the real mainnet detection next to it. Never present one as the other.
+>
+> **The upgrade path stays open.** Section 7 holds a mainnet cutover that can run any time
+> before Friday if funding lands. It is ~40 minutes of work, not a rebuild.
 
 ### How to use this plan
 
@@ -52,7 +71,7 @@ These are not contingencies. Apply them from the first commit.
    them Tuesday. Three Jupiter round trips at the worst hour of the week is three chances to
    fail for no gate benefit.
 4. **Phase 4 (devnet rehearsal) is the designated sacrifice.** If it is not green by Sun 13
-   Sep 20:00 UTC, skip it and rehearse on mainnet with a $5 position. Phase 5 already says
+   Sep 20:00 UTC, skip it. Under devnet-first the rehearsal and the gate run on the same network, so the rehearsal is cheaper to keep than it was. Phase 5 already says
    this; ARCHITECTURE.md Section 24 contradicted it by declaring devnet "must be green before
    row 5". Fixed there too.
 
@@ -70,7 +89,7 @@ provisioning a paid RPC (Task 0.3). Both are wall-clock. Start them before writi
 | 2 | Program instructions complete | 0.5d | 1 | Sun |
 | 3 | Crank | 0.75d | 2 | Sun |
 | 4 | Devnet rehearsal, full path | 0.25d | 3 | Sun |
-| 5 | **MAINNET GATE** | 0.5d | 4 | **Mon 14 Sep, done by 22:00 UTC** |
+| 5 | **DEVNET GATE plus mainnet watch** | 0.5d | 4 | **Mon 14 Sep, done by 22:00 UTC** |
 | 6 | Web app: the problem screen | 1.0d | 2 | Mon-Tue |
 | 7 | Capture the real tick, proof route | 0.25d | 5 | Tue |
 | 8 | Buy front door and bill routing | 0.5d | 6 | Wed |
@@ -115,10 +134,10 @@ Copy from: ARCHITECTURE.md Section 21, Credentials Needed row `KEEPER_KEYPAIR_PA
 ```bash
 solana-keygen new --no-bip39-passphrase -o keeper.json
 solana address -k keeper.json
-solana balance -k keeper.json --url mainnet-beta
+solana balance -k keeper.json --url devnet
 ```
 
-Expected: an address printed, balance `0 SOL`. Send 0.5 SOL to that address, then re-run the balance command and confirm `0.5 SOL`.
+Expected: an address printed. Then `solana airdrop 2 -k keeper.json --url devnet` and confirm the balance. Free.
 
 Commit: `chore: keeper keypair generated (public key recorded in .env.example)`
 
@@ -151,7 +170,7 @@ solana-keygen new --no-bip39-passphrase -o demo.json
 solana address -k demo.json
 ```
 
-Expected: an address. Send ~$60 of SOL to it. Do not buy the xStocks yet; that is Task 5.4, after the program is deployed.
+Expected: an address. `solana airdrop 2 -k demo.json --url devnet`. No real xStocks are purchased: on devnet the holding is the fixture mint from Task 4.1. Real xStocks exist only on mainnet.
 
 Commit: `chore: demo wallet generated`
 
@@ -175,22 +194,19 @@ solana address
 solana balance --url mainnet-beta
 ```
 
-Expected: at least **3.5 SOL** (3 for rent plus headroom for a failed deploy and a retry).
-Fund it now, not on Monday.
+Expected on devnet: `solana airdrop 5 --url devnet` succeeds. **Free.** The ~3.5 SOL mainnet rent requirement does not apply while we deploy to devnet, and this task drops off the critical path entirely.
 
-**Total mainnet SOL required before Monday: ~4.5 SOL** (3.5 deploy + 0.5 keeper + ~$60 demo).
-Source it today. An exchange withdrawal with KYC latency sitting at position zero of the
-critical path is the cheapest way to lose the STRCx window.
+**Total SOL required before Monday: zero.** Devnet faucet covers the deploy authority, the keeper and the demo wallet. Retained here because the mainnet cutover in Section 7 needs these numbers if funding lands later in the week.
 
 Commit: `chore: deploy authority funded`
 
 ### Phase 0 gate
 
 - [ ] `anchor --version` prints `anchor-cli 0.30.1`
-- [ ] `solana balance -k keeper.json --url mainnet-beta` shows at least 0.4 SOL
+- [ ] `solana balance -k keeper.json --url devnet` shows at least 0.4 SOL
 - [ ] `solana balance --url mainnet-beta` (the DEPLOY authority from `solana config get`) shows at least 3.5 SOL
 - [ ] The `getHealth` curl against the paid RPC returns `"ok"`
-- [ ] The demo wallet holds at least $50 of SOL
+- [ ] The demo wallet holds devnet SOL and the fixture-mint balance
 - [ ] `.env` exists and is listed in `.gitignore`
 
 ---
@@ -632,9 +648,11 @@ Commit: `test: full harvest path exercised on devnet`
 
 ---
 
-## Phase 5: MAINNET GATE (0.5d, Monday 14 Sep, complete by 22:00 UTC)
+## Phase 5: DEVNET GATE plus mainnet watch (0.5d, Monday 14 Sep, complete by 22:00 UTC)
 
 Everything before this was preparation. This is the deadline that matters.
+
+**Under the devnet-first decision this phase has two halves.** The gate is the devnet harvest path running end to end. The second half costs nothing and is what keeps the submission honest and interesting: point the tick-watcher at the real mainnet mints so it detects real corporate actions while the harvest executes on the fixture. Reads are free; no mainnet SOL is involved.
 
 <!-- [CRITIQUE E-2] Monday is 14 September 2026, not the 15th, and the expected STRCx
      activation is Mon 14 Sep ~23:00 UTC. This phase must be COMPLETE with one hour to
@@ -1116,6 +1134,30 @@ Trigger: a judge or user notices the increment passes through a keeper-held acco
 
 ---
 
+## Section 7: Mainnet cutover (run only if funding lands before Friday)
+
+Roughly 40 minutes. Nothing in the codebase changes; this is configuration and money.
+
+| # | Step | Command | Expected |
+|:---:|---|---|---|
+| 1 | Fund the deploy authority | send ~3.5 SOL to `solana address` | `solana balance` >= 3.5 |
+| 2 | Fund the keeper | send 0.5 SOL to the keeper pubkey | balance >= 0.5 |
+| 3 | Fund the demo wallet | send ~$60 of SOL | balance visible |
+| 4 | Deploy | `anchor deploy --provider.cluster mainnet` | program shows deployed |
+| 5 | Init config | `anchor run init-config --provider.cluster mainnet` | config account exists |
+| 6 | Buy real positions | `npx tsx scripts/seed-demo.ts` | three Solscan links |
+| 7 | Enroll and arm | enroll STRCx, restart the crank against mainnet | `[tick-watcher] STRCx` in the log |
+
+**The timing constraint does not disappear, it just moves.** The crank must be watching and
+the position enrolled BEFORE a tick activates. `tick-watcher` only fires on a change between
+two observations and `enroll` snapshots the current multiplier, so a tick that lands first is
+unharvestable forever. If the cutover happens after Monday, the next candidate is QQQx around
+20 to 30 September, which falls inside the judging window but after the submission deadline.
+A harvest captured then can still be added to the repository as evidence.
+
+
+---
+
 ## Section 5: Decision Tree Index
 
 | Tree | Covers | PRD risk | Severity | Where |
@@ -1149,7 +1191,7 @@ Every [C] concern from `concerns.md` has a phase gate that verifies it.
 | Concern | Verified at |
 |---|---|
 | Real mainnet tick harvested end to end | Phase 7 gate: `submission/proof.md` exists with real signatures that resolve |
-| Mainnet harvest path live by end of Monday | Phase 5 gate: crank logging tick-watcher lines on mainnet |
+| Devnet harvest path live, crank watching mainnet, by Mon 14 Sep 22:00 UTC | Phase 5 gate: a devnet harvest confirmed, and tick-watcher lines for real mainnet mints in the log |
 | Program cannot move more than the increment | Phase 2 gate: `harvest` takes no amount argument in the IDL. Phase 6 gate: capped delegate visible in `spl-token display` |
 | Links resolve on 2 October | Phase 9 gate and Phase 10 Task 10.2, plus the weekly check in `SUBMISSION-CHECKLIST.md` |
 | Delta computed in RAW units | Phase 1 gate: five passing tests against real AAPLx ticks |

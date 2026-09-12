@@ -123,7 +123,7 @@ critique: the highest-value attack surfaces are (1) the delta formula and its ro
 ```
 
 ---
-### critique — 2026-09-12T12:05:00Z
+### critique: 2026-09-12T12:05:00Z
 **Status:** COMPLETE
 **Session(s):** 2 (session 1 found E-1..E-5, applied the fixes, stalled before writing state)
 
@@ -133,8 +133,8 @@ critique: the highest-value attack surfaces are (1) the delta formula and its ro
 - Second: two unreconciled accrual floors, one of which silently broke the E-4 receipt triple.
 
 #### Additions (not in PRD/Architecture)
-- [SKILL] [NEW] `MAX_TICK_RATIO` (1.02) plus `TickTooLarge` and `BadCollectionAccount` errors — closes C-1 and C-8a — ARCHITECTURE Sections 5, 6, 10, 17.
-- [SKILL] [NEW] Two tests, `forward_split_is_rejected` and `aaplx_tick_delta_is_exactly_602_834` — the split case only LOOKED covered, and E-1's constant was never asserted — ARCHITECTURE Section 6.
+- [SKILL] [NEW] `MAX_TICK_RATIO` (1.02) plus `TickTooLarge` and `BadCollectionAccount` errors, closes C-1 and C-8a, ARCHITECTURE Sections 5, 6, 10, 17.
+- [SKILL] [NEW] Two tests, `forward_split_is_rejected` and `aaplx_tick_delta_is_exactly_602_834`, the split case only LOOKED covered, and E-1's constant was never asserted, ARCHITECTURE Section 6.
 - No new documents, templates or checklists. Every fix amends existing text.
 
 #### Deviations
@@ -142,13 +142,13 @@ critique: the highest-value attack surfaces are (1) the delta formula and its ro
 - E-1..E-5 taken as given and not re-verified, per dispatch.
 
 #### Verified Facts
-- [VF-C1] A forward split raises the multiplier, so `require!(m1 >= m0)` did not exclude it. Token-2022 reverts a delegate transfer above the allowance, so a 2x split reverted — but every non-dividend bump up to `m1/m0 = 1.0526` implied a delta at or under the 5% cap and executed in full. Source: ARCHITECTURE S6/S10 against PRD F2 step 4, which states splits arrive through this same channel.
+- [VF-C1] A forward split raises the multiplier, so `require!(m1 >= m0)` did not exclude it. Token-2022 reverts a delegate transfer above the allowance, so a 2x split reverted, but every non-dividend bump up to `m1/m0 = 1.0526` implied a delta at or under the 5% cap and executed in full. Source: ARCHITECTURE S6/S10 against PRD F2 step 4, which states splits arrive through this same channel.
 - [VF-C2] Span telescoping holds exactly: `R*(1-m0/m1) + R*(m0/m1)*(1-m1/m2) == R*(1-m0/m2)`, so anchoring the receipt's `m0` to the first harvest of a batch keeps the recompute valid across accrued ticks. Source: algebra, checked against the S10/S11 field flow.
 - [VF-C4] The repository contains no code: no Anchor.toml, no programs/, no crank/, no web/. All five Phase 0 tasks undone. Source: directory listing, 2026-09-12.
 
 #### Assumptions
-- [A-C1] `MAX_TICK_RATIO = 1.02` is calibrated on three observed ticks (AAPLx 0.060%, KOx 0.449%, STRCx ~0.51%) — NICE-TO-HAVE. If a real dividend ever exceeds 2% the harvest fails closed, which is the safe direction; widen the constant rather than removing it.
-- [A-C4] Phase 0's "~3 SOL for program rent" estimates a program that does not exist yet — NICE-TO-HAVE, error direction is safe.
+- [A-C1] `MAX_TICK_RATIO = 1.02` is calibrated on three observed ticks (AAPLx 0.060%, KOx 0.449%, STRCx ~0.51%), NICE-TO-HAVE. If a real dividend ever exceeds 2% the harvest fails closed, which is the safe direction; widen the constant rather than removing it.
+- [A-C4] Phase 0's "~3 SOL for program rent" estimates a program that does not exist yet, NICE-TO-HAVE, error direction is safe.
 
 #### Blockers for Downstream
 None halting. One thing is wall-clock and is now the first instruction in Phase 0: ~4.5 SOL has to arrive on mainnet, and no amount of coding speed substitutes.
@@ -160,3 +160,24 @@ None halting. One thing is wall-clock and is now the first instruction in Phase 
 
 #### For Next Skill
 build: start Task 0.5 (fund ~4.5 SOL) before `anchor init`; it is the only item with hours of lead time. Phase 1 now expects 6 tests then 7, not 4 then 5. The gate is Monday 22:00 UTC and the four cuts in PLAN "Cuts taken now" are defaults, not contingencies. D-16 is P1 and owned by you: the PDA-delegate `transfer_checked` shape is [UNVERIFIED] and DT-15 does not cover it, so exercise it first on devnet. D-8 (revert the Unknown→Dividend hack) is now load-bearing for C-1, because that hack turns every unlabelled multiplier move into a harvest. Do not re-litigate the dividend premise.
+
+### conductor: checkpoint 3 resolution, 2026-09-12T12:30:26Z
+
+#### Done
+Applied the Checkpoint 3 decisions: devnet first, all four critique cuts accepted, RPC key
+search running against the machine.
+
+#### Key Decisions
+- [USER] Deploy to devnet rather than funding mainnet today. Reworked PLAN Phase 0 and Phase 5,
+  added a mainnet cutover section, and updated the [C] demo concern.
+- [USER] All four critique cuts accepted as defaults.
+- [CONDUCTOR] Amended critique finding C-1: MAX_TICK_RATIO raised from 1.02 to 1.03 after
+  checking all 570 recorded dividend events. 1.02 would have rejected six real dividends,
+  one on a tradeable mint.
+
+#### For Next Skill
+build: the gate is now a DEVNET harvest running end to end, plus the crank watching real
+mainnet mints for detection. Both halves are required. Every devnet artifact that appears in
+the demo must be labelled devnet. D-8 (revert the Unknown-to-Dividend rehearsal hack) is now
+MORE important, not less, because the fixture mint has no issuer record and will always report
+reason Unknown.

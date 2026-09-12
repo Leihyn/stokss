@@ -394,6 +394,40 @@ Expected: 5 passing tests under "delta math against real AAPLx ticks".
 
 Commit: `test: delta math cross-checked against five real AAPLx ticks`
 
+
+### Decision Point DT-16: `anchor build` cannot generate the IDL (toolchain, hit on 2026-09-12)
+
+Run: `anchor build`
+Expected: `Finished release profile` and a `target/idl/stokss.json`.
+
+**If it works:** delete the hand-generated IDL and use the compiler's. Preferred.
+
+**If you get `feature edition2024 is required` while parsing some crate's manifest:**
+The Solana BPF toolchain bundles cargo 1.84 (platform-tools v1.51) while the host is newer,
+and transitive deps of solana-program 1.18.26 have since moved to edition2024. Already fixed
+in this repo by `.cargo/config.toml` setting `[resolver] incompatible-rust-versions = "fallback"`
+plus `rust-version = "1.84"` in the program manifest. If it returns after a `cargo update`:
+1. `rm Cargo.lock && cargo generate-lockfile`
+2. `cargo update -p blake3 --precise 1.5.5` (its digest 0.11 line pulls crypto-common 0.2.2)
+3. Re-run.
+
+**If you get `no method named source_file found for proc_macro2::Span`:**
+anchor-syn 0.30.1 builds the IDL under `--cfg procmacro2_semver_exempt`, which needs
+`proc_macro::Span::source_file`. That compiler API is gone, so proc-macro2 new enough to
+compile no longer exposes it.
+1. Do NOT pin proc-macro2 below 1.0.95 to get `source_file` back. It compiles, then
+   `ark-bn254`'s `MontFp!` macro panics with "could not parse". There is no version that
+   satisfies both; this was tried and it does not exist.
+2. `anchor idl build` is the same code path and fails identically.
+3. Use `anchor build --no-idl` for the deployable `.so`, then `python3 scripts/gen-idl.py`.
+
+**The fallback is not a guess.** `scripts/gen-idl.py` derives every discriminator the way
+Anchor does, `sha256("global:" + name)[0..8]` for instructions and `sha256("account:" + Name)`
+for accounts, so a client built from it emits byte-identical instruction data. `anchor idl type`
+parses the output and generates the TypeScript type from it, which is the tooling validating
+the file. The one real cost is drift: **if you change a `#[derive(Accounts)]` struct, update
+`scripts/gen-idl.py` in the same commit.**
+
 ### Decision Point DT-15: `anchor build` fails on the Token-2022 interface
 
 Run: `anchor build`
@@ -1177,8 +1211,9 @@ A harvest captured then can still be added to the repository as evidence.
 | DT-13 | Keeper trust | R13 | MEDIUM | Section 4 |
 | DT-14 | Deployment does not survive to 2 Oct | R14 | HIGH | Phase 9 |
 | DT-15 | Anchor build fails on Token-2022 | build risk | HIGH | Phase 2 |
+| DT-16 | anchor build cannot generate the IDL (toolchain) | build risk | HIGH | Phase 2 |
 
-Fifteen trees against fourteen PRD risks plus one build risk. Every `DT-` reference in PRD.md Section 7 resolves to a definition here.
+Sixteen trees against fourteen PRD risks plus two build risks. Every `DT-` reference in PRD.md Section 7 resolves to a definition here.
 
 Found by the critique pass: six of these (DT-3, 6, 9, 10, 11, 13) were referenced by the PRD and had no definition. The plan's own metric only counted trees against CRITICAL and HIGH risks, so it did not catch the dangling references.
 

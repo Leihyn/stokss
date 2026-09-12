@@ -1,0 +1,9 @@
+# The Solana BPF toolchain bundles cargo 1.84 / rustc 1.84.1 (platform-tools v1.51), while the
+# host toolchain is 1.86. Several transitive dependencies of solana-program 1.18.26 have since
+# published editions the older cargo cannot parse, which makes `anchor build` fail on crates
+# the program never calls (crypto-common, zeroize_derive, toml_datetime, and more behind them).
+#
+# Rather than pin each offender by hand and rediscover the next one on every clean checkout,
+# resolve against the toolchain that actually compiles the program.
+[resolver]
+incompatible-rust-versions = "fallback"

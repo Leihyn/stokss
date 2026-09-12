@@ -2,6 +2,9 @@
 name = "stokss"
 version = "0.1.0"
 edition = "2021"
+# Matches the Solana BPF toolchain (platform-tools v1.51 ships rustc 1.84.1), so dependency
+# resolution never selects a crate the build toolchain cannot parse.
+rust-version = "1.84"
 
 [lib]
 crate-type = ["cdylib", "lib"]

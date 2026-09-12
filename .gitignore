@@ -6,3 +6,8 @@ target/
 target/
 crank.db
 crank.db-*
+keeper.json
+demo.json
+crank-state.json
+crank-state.json.tmp
+crank/.env

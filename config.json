@@ -1,0 +1,118 @@
+{
+  "hackathon_name": "Stocklana",
+  "url": "https://hackathons.solana.com/hackathons/stocklana",
+  "platform": "other",
+  "deadline": "2026-09-18T20:00:00Z",
+  "prize_pool_usd": 100000,
+  "tracks": [
+    "MAIN TRACK"
+  ],
+  "chain": "Solana",
+  "team_size_max": null,
+  "submission_requirements": [
+    "Register before submitting",
+    "At least one link: GitHub, live demo, or video",
+    "One submission per team",
+    "Original work",
+    "Open-source components disclosed",
+    "Edits allowed until close"
+  ],
+  "required_integrations": [],
+  "products": [
+    "xStocks (Backed)",
+    "Jupiter",
+    "Raydium",
+    "Kamino",
+    "Pyth",
+    "Token-2022"
+  ],
+  "docs_url": "https://docs.xstocks.fi",
+  "toolkit_url": null,
+  "telegram": null,
+  "registration_form": "https://hackathons.solana.com/hackathons/stocklana",
+  "submission_form": "https://hackathons.solana.com/hackathons/stocklana",
+  "demoFormat": "both",
+  "demo_video_requirements": {
+    "max_seconds": null,
+    "formats": [],
+    "platform": null,
+    "content_notes": "No published video requirement. Video is one of three accepted link types. ASSUMED cap 300s."
+  },
+  "submission_form_fields": [
+    "Project name",
+    "Link (GitHub / live demo / video)",
+    "Teammate invites"
+  ],
+  "disqualifiers": [
+    "Not registered before submitting",
+    "No working link",
+    "More than one submission per team",
+    "Non-original work",
+    "Undisclosed closed-source reuse",
+    "OPERATIONAL (not a published rule): link dead before judging ends 2026-10-02"
+  ],
+  "workshops": [],
+  "sponsor_bounties": [],
+  "sidetracks": [],
+  "network": {
+    "chain": "Solana",
+    "chain_id": "mainnet-beta",
+    "rpc": "https://api.mainnet-beta.solana.com (public; use Helius/Triton for the crank)",
+    "testnet_name": "devnet",
+    "faucet_url": "https://faucet.solana.com",
+    "deploy_requirement": "Not stated. Mainnet strongly implied: the assets only exist on mainnet."
+  },
+  "judging_criteria": [
+    {
+      "name": "Real user and problem",
+      "weight_pct": 25,
+      "derived": true
+    },
+    {
+      "name": "Working end-to-end demo",
+      "weight_pct": 25,
+      "derived": true
+    },
+    {
+      "name": "Reason it belongs on Solana",
+      "weight_pct": 25,
+      "derived": true
+    },
+    {
+      "name": "Quality of execution",
+      "weight_pct": 25,
+      "derived": true
+    }
+  ],
+  "judges": [],
+  "prizes": [
+    {
+      "track": "MAIN TRACK",
+      "amount_usd": 100000,
+      "notes": "No published split. Awarded by the Solana Foundation."
+    }
+  ],
+  "builder_profile": {
+    "skills": [
+      "Solana/Anchor/Rust",
+      "Node.js",
+      "Next.js",
+      "smart-contract security auditing"
+    ],
+    "tools": [
+      "Anchor 0.30.1",
+      "solana-cli 3.0.13",
+      "rustc 1.86",
+      "node 25.6.1",
+      "pnpm",
+      "bun"
+    ],
+    "preferences": [
+      "UI must be attractive as well as functional",
+      "ships fast",
+      "works solo"
+    ]
+  },
+  "judging_criteria_derived_note": "Organizers publish one question and four things judges look for, with no weights. Equal weighting derived.",
+  "compiled_at": "2026-09-12T08:25:52.802419+00:00"
+}

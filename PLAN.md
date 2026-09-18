@@ -7,12 +7,31 @@
 
 ---
 
+> **CLOCK AMENDMENT, 18 Sep 2026.** The deadline moved from 18 Sep to **25 Sep 2026,
+> 20:00 UTC** (4:00pm ET), verified against the live hackathon page. The Section 1 metadata
+> below is current. Every *other* date further down this document was keyed to the 18 Sep
+> deadline and is **SUPERSEDED**, including the "Mon 14 Sep 22:00 UTC" binding gate and the
+> whole Phase 5 schedule. Do not follow them.
+>
+> Superseding facts, verified 18 Sep:
+> - The Mon 14 Sep gate was **missed**. STRCx ticked 15 Sep 00:30 UTC (+0.5055%) with the
+>   crank unarmed. KOx (+0.4152%, 15 Sep) and TSMx (+0.2114%, 16 Sep) also fired.
+> - `enroll` snapshots `m0`; `harvest` recomputes against live `m1`. So **enrollment before a
+>   tick is the only hard deadline. The harvest itself can run days later** with identical
+>   math. Re-plan around enrollment timing, not harvest timing.
+> - No **scheduled** future multiplier events exist on-chain right now for any watched mint:
+>   every `newMultiplierEffectiveTimestamp` is in the past. The issuer sets the pending slot
+>   only shortly before activation, so continuous detection is required to catch it.
+> - In-window tick candidates (predicted): **AVGOx ~21 Sep**, plus **QQQx** and **SPYx**, both
+>   overdue with an 18 Sep ex-date. Run `tsx crank/src/scan-windows.ts` to refresh.
+> - STRCx next ~30 Sep, inside judging, capturable as post-submission README evidence.
+
 ## Section 1: Plan Metadata
 
 | Field | Value |
 |---|---|
-| Deadline | 2026-09-18 20:00 UTC |
-| Build days | 6 (Sat 12 through Thu 17). Friday is submission day. |
+| Deadline | 2026-09-25 20:00 UTC (EXTENDED from 18 Sep; verified 18 Sep) |
+| Build days | 6 (Sat 19 through Thu 24). Friday 25 is submission day. |
 | Total estimated | 5.75 days |
 | Binding internal gate | **Devnet harvest path running AND the crank watching real mainnet mints: HARD STOP Mon 14 Sep 22:00 UTC.** (Checkpoint 3: devnet first, so the gate is the devnet harvest plus free mainnet reads, not a mainnet harvest.) Sun 13 Sep 20:00 UTC is the CHECKPOINT that triggers the cut list, not a second gate. <!-- [CRITIQUE E-2] was "end of Monday 15 Sep": 15 Sep 2026 is a TUESDAY. Monday is the 14th, and Aug 30 + 15d puts the expected STRCx tick on Mon 14 Sep, activating ~23:00-00:30 UTC. The old gate landed AFTER the event it exists to catch. --> <!-- [CRITIQUE C-3] The E-2 fix wrote "Sun 13 Sep end of day" here and in concerns.md but left Section 2 and the Phase 5 header reading "Mon 14 Sep, done by 22:00 UTC". Two gates one day apart in one document, and a builder working top to bottom follows the phase schedule. One gate now: Monday 22:00 UTC. Sunday is a checkpoint with teeth (see C-4 cut list below), which is what the Sunday date was actually for. --> |
 | Why that gate | STRCx has ticked every ~15 days (Jun 30, Jul 15, Jul 31, Aug 14, Aug 30). Next expected 14-15 Sep, with $335k liquidity. Capturing that real tick is the primary demo objective. |

@@ -3,7 +3,7 @@
 **Version:** 1.0
 **Date:** 2026-09-12
 **Hackathon:** Stocklana (Solana Foundation), MAIN TRACK, $100,000
-**Deadline:** 2026-09-18 20:00 UTC. Judging through 2026-10-02.
+**Deadline:** 2026-09-25 20:00 UTC. Judging through 2026-10-02.
 **Scope mode:** `standard` (6 days remaining, 6 build days plus submission day)
 **Source:** ideate winner brief (`warroom/WINNER-BRIEF.md`), warroom phase skipped
 
@@ -552,7 +552,7 @@ Six categories covered: Technical (R2, R3, R4, R5, R6, R13), Demo (R1, R7, R14),
 
 ## Section 8: Day-by-Day Build Plan
 
-Today is Saturday 12 September. The deadline is Friday 18 September 20:00 UTC. Six build days (Saturday through Thursday) plus submission day.
+Today is Friday 18 September. The deadline is Friday 25 September 20:00 UTC (extended from 18 Sep). Six build days (Saturday 19 through Thursday 24) plus submission day.
 
 | Day | Primary objective | Secondary | Deliverable |
 |-----|------------------|-----------|-------------|
@@ -562,7 +562,7 @@ Today is Saturday 12 September. The deadline is Friday 18 September 20:00 UTC. S
 | **Tue 15 Sep** | Capture the real tick if it lands. Receipts feed and the calendar. | `/proof` route | A real harvest on mainnet, or a documented near-miss |
 | **Wed 16 Sep** | Buy front door, bill routing, income-stocks list | Deploy to production hosting | Feature-complete |
 | **Thu 17 Sep** | Design pass, demo recording, README | Link-survival check | Video cut |
-| **Fri 18 Sep** | Submit by 14:00 UTC, then edit until close | Final link tests from incognito | Submitted |
+| **Fri 25 Sep** | Submit by 14:00 UTC, then edit until close | Final link tests from incognito | Submitted |
 
 **Buffer:** Wednesday is the buffer. If the harvest path slips past Monday, Wednesday's features are cut in this order: bill routing, then the buy front door, then the calendar.
 

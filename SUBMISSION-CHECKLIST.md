@@ -3,7 +3,7 @@
 Platform: hackathons.solana.com (not Devpost/DoraHacks/Devfolio). Simple form, few required fields, so the risk is not the form. The risk is link rot during a two-week judging window.
 
 ## Hard facts
-- Submissions close **Fri 18 Sep 2026, 4:00pm ET / 20:00 UTC**.
+- Submissions close **Fri 25 Sep 2026, 4:00pm ET / 20:00 UTC** (extended from 18 Sep; verified 18 Sep).
 - Judging runs **through 2 Oct 2026**. Every link must still resolve on that date.
 - Edits are allowed until submissions close. Submit early, keep editing.
 - One submission per team. Original work. Open-source components fine if disclosed.

@@ -11,3 +11,4 @@ demo.json
 crank-state.json
 crank-state.json.tmp
 crank/.env
+crank/population-scan.out

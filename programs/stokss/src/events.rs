@@ -36,3 +36,38 @@ pub struct PlanClosed {
     pub total_paid_usdc: u64,
     pub ts: i64,
 }
+
+#[event]
+pub struct GiftCreated {
+    pub gift: Pubkey,
+    pub sender: Pubkey,
+    pub mint: Pubkey,
+    pub amount_raw: u64,
+    pub m0_bits: u64,
+    pub unlock_at: i64,
+    pub expires_at: i64,
+    pub ts: i64,
+}
+
+#[event]
+pub struct GiftClaimed {
+    pub gift: Pubkey,
+    pub sender: Pubkey,
+    pub recipient: Pubkey,
+    pub mint: Pubkey,
+    pub to_recipient_raw: u64,
+    /// Escrow accrual returned to the sender under AccrualMode::ToSender.
+    pub to_sender_raw: u64,
+    pub m0_bits: u64,
+    pub m1_bits: u64,
+    pub ts: i64,
+}
+
+#[event]
+pub struct GiftReclaimed {
+    pub gift: Pubkey,
+    pub sender: Pubkey,
+    pub mint: Pubkey,
+    pub amount_raw: u64,
+    pub ts: i64,
+}

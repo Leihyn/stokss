@@ -91,3 +91,43 @@ pub struct HarvestReceipt {
     pub settled_ts: i64,
     pub bump: u8,
 }
+
+/// Who owns the dividend that accrues while a gift sits in escrow.
+///
+/// This question does not exist for a plain token gift. It exists here because the vault
+/// holds a RAW balance and a raw balance represents MORE shares after a multiplier tick, so
+/// a gift crossing a corporate action is worth more at claim than at creation.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug, InitSpace)]
+pub enum AccrualMode {
+    /// The recipient keeps whatever accrued while the gift was wrapped.
+    ToRecipient,
+    /// The sender gets the accrued increment back; the recipient gets the shares intended.
+    ToSender,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Gift {
+    pub gift_id: u64,
+    pub sender: Pubkey,
+    pub mint: Pubkey,
+    /// sha256 of the secret carried in the claim link. The link is the bearer instrument.
+    pub claim_hash: [u8; 32],
+    /// Raw units escrowed at creation. The vault balance is authoritative at claim time.
+    pub amount_raw: u64,
+    /// f64 bits of the multiplier at creation, anchoring the accrual computation.
+    pub m0_bits: u64,
+    /// Not claimable before this unix timestamp. 0 means immediately claimable.
+    pub unlock_at: i64,
+    /// Sender may reclaim on or after this. 0 means the gift can never be pulled back.
+    pub expires_at: i64,
+    pub accrual_mode: AccrualMode,
+    /// Donor cost basis in USD cents per share, carried over with the gift. 0 = not
+    /// recorded. This is information a plain on-chain transfer destroys permanently. It is
+    /// a record, not tax advice.
+    pub basis_cents_per_share: u64,
+    pub basis_acquired_at: i64,
+    pub claimed: bool,
+    pub created_at: i64,
+    pub bump: u8,
+}

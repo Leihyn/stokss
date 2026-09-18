@@ -42,4 +42,37 @@ pub mod stokss {
     pub fn close_plan(ctx: Context<ClosePlan>) -> Result<()> {
         instructions::close_plan::handler(ctx)
     }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_gift(
+        ctx: Context<CreateGift>,
+        gift_id: u64,
+        amount_raw: u64,
+        claim_hash: [u8; 32],
+        unlock_at: i64,
+        expires_at: i64,
+        accrual_mode: state::AccrualMode,
+        basis_cents_per_share: u64,
+        basis_acquired_at: i64,
+    ) -> Result<()> {
+        instructions::gift::create_handler(
+            ctx,
+            gift_id,
+            amount_raw,
+            claim_hash,
+            unlock_at,
+            expires_at,
+            accrual_mode,
+            basis_cents_per_share,
+            basis_acquired_at,
+        )
+    }
+
+    pub fn claim_gift(ctx: Context<ClaimGift>, secret: Vec<u8>) -> Result<()> {
+        instructions::gift::claim_handler(ctx, secret)
+    }
+
+    pub fn reclaim_gift(ctx: Context<ReclaimGift>) -> Result<()> {
+        instructions::gift::reclaim_handler(ctx)
+    }
 }

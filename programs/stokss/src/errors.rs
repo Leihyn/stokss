@@ -28,4 +28,20 @@ pub enum StokssError {
     NothingPending,
     #[msg("Arithmetic overflow")]
     Overflow,
+    #[msg("Claim secret does not match the gift")]
+    BadClaimSecret,
+    #[msg("Gift has already been claimed or reclaimed")]
+    GiftAlreadyClaimed,
+    #[msg("Gift is not claimable yet")]
+    GiftLocked,
+    #[msg("Gift has not expired, or was created as non-reclaimable")]
+    GiftNotExpired,
+    #[msg("Gift expiry must be after the unlock time")]
+    GiftExpiryBeforeUnlock,
+    #[msg("Signer is not the gift sender")]
+    NotGiftSender,
+    #[msg("Token account owner is not the claimer")]
+    NotGiftRecipient,
+    #[msg("Token account mint does not match the gift mint")]
+    GiftMintMismatch,
 }

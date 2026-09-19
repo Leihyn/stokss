@@ -1,0 +1,67 @@
+================================================================
+PAUSE + FREEZE AUTHORITY
+JDq14BWvqCRFNu1krb12bcRpbGtJZ1FLEakMw6FdxJNs
+================================================================
+account: owner=11111111111111111111111111111111 space=0 lamports=229934401
+(space 0 + system owner => plain keypair, NOT an SPL multisig)
+  fetched 1000 signatures...
+  fetched 2000 signatures...
+  fetched 3000 signatures...
+  fetched 4000 signatures...
+  fetched 5000 signatures...
+  fetched 6000 signatures...
+  fetched 7000 signatures...
+  fetched 8000 signatures...
+  fetched 9000 signatures...
+  fetched 10000 signatures...
+  fetched 11000 signatures...
+  fetched 12000 signatures...
+  fetched 13000 signatures...
+  fetched 14000 signatures...
+  fetched 15000 signatures...
+  fetched 15953 signatures...
+signatures: 15953 total, 15856 successful, 97 failed
+range: 2025-06-09T08:55:17  ->  2026-04-29T07:26:37
+  progress 10/15856, unresolved 0, hits 94
+  progress 260/15856, unresolved 0, hits 155
+  progress 510/15856, unresolved 0, hits 155
+  progress 760/15856, unresolved 0, hits 155
+  progress 1010/15856, unresolved 0, hits 155
+  progress 1260/15856, unresolved 0, hits 155
+  progress 1510/15856, unresolved 0, hits 155
+  progress 1760/15856, unresolved 0, hits 155
+  progress 2010/15856, unresolved 0, hits 155
+  progress 2260/15856, unresolved 0, hits 155
+  progress 2510/15856, unresolved 0, hits 155
+  progress 2760/15856, unresolved 0, hits 155
+  progress 3010/15856, unresolved 0, hits 155
+  progress 3260/15856, unresolved 0, hits 155
+  progress 3510/15856, unresolved 0, hits 155
+  progress 3760/15856, unresolved 0, hits 155
+  progress 4010/15856, unresolved 0, hits 155
+  progress 4260/15856, unresolved 0, hits 155
+  progress 4510/15856, unresolved 0, hits 155
+  progress 4760/15856, unresolved 0, hits 155
+  progress 5010/15856, unresolved 0, hits 155
+  progress 5260/15856, unresolved 0, hits 155
+  progress 5510/15856, unresolved 0, hits 155
+  progress 5760/15856, unresolved 0, hits 155
+  progress 6010/15856, unresolved 0, hits 155
+  progress 6260/15856, unresolved 0, hits 155
+  progress 6510/15856, unresolved 0, hits 155
+  progress 6760/15856, unresolved 0, hits 155
+  progress 7010/15856, unresolved 0, hits 155
+  progress 7260/15856, unresolved 0, hits 155
+  progress 7510/15856, unresolved 0, hits 155
+  progress 7760/15856, unresolved 0, hits 155
+  progress 8010/15856, unresolved 0, hits 155
+  progress 8260/15856, unresolved 0, hits 155
+  progress 8510/15856, unresolved 0, hits 155
+  progress 8760/15856, unresolved 0, hits 155
+  progress 9010/15856, unresolved 0, hits 155
+  progress 9260/15856, unresolved 0, hits 155
+  progress 9510/15856, unresolved 0, hits 155
+  progress 9760/15856, unresolved 0, hits 155
+  progress 10010/15856, unresolved 0, hits 155
+  progress 10260/15856, unresolved 0, hits 155
+  progress 10510/15856, unresolved 0, hits 155

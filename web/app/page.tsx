@@ -1,6 +1,7 @@
 import data from "@/data/measurements.json";
 import SessionBadge from "@/components/SessionBadge";
 import ExposurePanel from "@/components/ExposurePanel";
+import LastPrint from "@/components/LastPrint";
 import { fetchSession } from "@/lib/session";
 
 export const revalidate = 30;
@@ -42,6 +43,10 @@ export default async function Home() {
 
       <section className="mb-10">
         <SessionBadge initial={session} />
+      </section>
+
+      <section className="mb-10">
+        <LastPrint symbol="SPY" />
       </section>
 
       <section className="mb-14">

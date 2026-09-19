@@ -1,0 +1,135 @@
+{
+  "status": "complete",
+  "mode": "milestone",
+  "autonomous_mode": false,
+  "runDate": "2026-09-19",
+  "winnerReadiness": 0,
+  "maxScore": 100,
+  "overallStatus": "HOLD",
+  "recommendation": "HOLD \u2014 no spec exists for the shipped product; money-shot demo step never executed; submission readiness unaddressed.",
+  "blocked_reason": null,
+  "killZones": {
+    "kz1_demo_reliability": "CLEAR",
+    "kz2_submission_completeness": "CLEAR",
+    "kz3_contract_wrong_network": "N/A",
+    "kz4_sponsor_integration": "CLEAR",
+    "kz5_eligibility_compliance": "CLEAR",
+    "kz4_condition": null,
+    "kz5_reason": "No LICENSE file; commit window valid; registration unverified"
+  },
+  "facets": {
+    "f1_demo_reliability": {
+      "score": 0,
+      "max": 25,
+      "notes": "preflight-only"
+    },
+    "f2_submission_completeness": {
+      "score": 0,
+      "max": 20,
+      "notes": "preflight-only"
+    },
+    "f3_sponsor_integration": {
+      "score": 0,
+      "max": 20,
+      "notes": "preflight-only"
+    },
+    "f4_technical_correctness": {
+      "score": 0,
+      "max": 15,
+      "notes": "preflight-only"
+    },
+    "f5_narrative_quality": {
+      "score": 0,
+      "max": 10,
+      "notes": "preflight-only"
+    },
+    "f6_eligibility_compliance": {
+      "score": 0,
+      "max": 5,
+      "notes": "preflight-only"
+    },
+    "f7_code_quality": {
+      "score": 0,
+      "max": 3,
+      "notes": "preflight-only"
+    },
+    "f8_presentation_assets": {
+      "score": 0,
+      "max": 2,
+      "notes": "preflight-only"
+    }
+  },
+  "sponsors": {},
+  "blockers": [
+    "No PRD/ARCHITECTURE/PLAN for Closing Bell \u2014 all planning docs describe stokss",
+    "Withdrawal step never executed \u2014 no mainnet CLMM position",
+    "Submission form never opened; registration unverified",
+    "No deployment URL",
+    "No README",
+    "No LICENSE"
+  ],
+  "triage_order": [
+    "registration+draft",
+    "fund $50 position + one withdrawal",
+    "deploy public URL",
+    "README",
+    "LICENSE",
+    "Pyth",
+    "refresh exposure snapshot",
+    "tests",
+    "remove abandoned program"
+  ],
+  "milestones": [
+    {
+      "phase": "closing-bell-build",
+      "completion": null,
+      "drift": "major",
+      "demo_path": "at_risk",
+      "kz_warnings": [
+        "KZ-1",
+        "KZ-2",
+        "KZ-5"
+      ],
+      "kz_triggered": [],
+      "decision": "HOLD",
+      "timestamp": "2026-09-19T19:27:53.807909"
+    }
+  ],
+  "winningPatternChecks": {
+    "wp1_landing": {
+      "status": "PASS",
+      "detail": "real data on first load, no wallet gate"
+    },
+    "wp2_testRatio": {
+      "status": "FAIL",
+      "ratio": 0.0,
+      "detail": "0 tests / 11 source files in web/"
+    },
+    "wp3_multiTrack": {
+      "status": "WARN",
+      "realTracks": 0,
+      "claimedTracks": 0
+    },
+    "wp4_submissionDir": {
+      "status": "SKIPPED",
+      "detail": "milestone mode"
+    },
+    "wp5_readmeStory": {
+      "status": "SKIPPED",
+      "detail": "milestone mode; no README exists"
+    }
+  },
+  "buildVerification": {
+    "contractAddresses": {},
+    "deviationCount": 0,
+    "knownRiskCount": 0
+  },
+  "debugIntegration": {
+    "confidenceScore": null,
+    "unresolvedCount": null,
+    "testCoverage": null
+  },
+  "contractAddresses": {},
+  "context_percentage": 0,
+  "errors": []
+}

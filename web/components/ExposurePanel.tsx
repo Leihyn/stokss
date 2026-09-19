@@ -106,6 +106,11 @@ export default function ExposurePanel({ initial }: { initial: SessionState }) {
         liquidity to McDonald&apos;s stock paired with FRIES. These are not being held as
         equity exposure.
       </p>
+      <p className="mt-2 font-mono text-[10px] leading-relaxed text-white/25">
+        Position counts are a snapshot taken{" "}
+        {new Date(exposure.measuredAt).toISOString().slice(0, 10)}, not a live feed. The
+        clock above and the Pyth price update on their own.
+      </p>
     </div>
   );
 }

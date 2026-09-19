@@ -32,37 +32,37 @@ export default function LastPrint({ symbol = "SPY" }: { symbol?: string }) {
   const stale = (p?.ageSeconds ?? 0) > 3600;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+    <div className="rounded-card border border-base-700 bg-base-900 p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-medium">Last real price of {symbol}</h3>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-white/30">
+        <h3 className="text-body font-medium">Last real price of {symbol}</h3>
+        <span className="tnum font-mono text-micro uppercase tracking-wider text-ink-500">
           Pyth · read on-chain
         </span>
       </div>
 
-      {err && <p className="font-mono text-xs text-red-300/80">feed unavailable ({err})</p>}
-      {!p && !err && <p className="font-mono text-xs text-white/40">reading price account…</p>}
+      {err && <p className="tnum font-mono text-body text-danger-400">feed unavailable ({err})</p>}
+      {!p && !err && <p className="tnum font-mono text-body text-ink-500">reading price account…</p>}
 
       {p && (
         <>
           <div className="flex items-baseline gap-3">
-            <span className="font-mono text-3xl font-semibold tabular-nums">
+            <span className="tnum font-mono text-3xl font-semibold tabular-nums">
               ${p.price.toFixed(2)}
             </span>
-            <span className="font-mono text-xs text-white/35">±{p.confidence.toFixed(2)}</span>
+            <span className="tnum font-mono text-body text-ink-500">±{p.confidence.toFixed(2)}</span>
           </div>
           <p
-            className={`mt-2 text-sm leading-relaxed ${stale ? "text-amber-300/90" : "text-emerald-300/90"}`}
+            className={`mt-2 text-body leading-relaxed ${stale ? "text-shut-400" : "text-open-400"}`}
           >
-            Published <span className="font-mono font-semibold">{age(p.ageSeconds)}</span> ago
+            Published <span className="tnum font-mono font-semibold">{age(p.ageSeconds)}</span> ago
             {stale ? ", and it has not moved since." : "."}
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-white/40">
+          <p className="mt-2 text-body leading-relaxed text-ink-500">
             {stale
               ? "The reference price is frozen. Pyth cannot publish what the market is not quoting, yet the tokenized share keeps trading on Solana every second of it."
               : "The underlying is being priced right now."}
           </p>
-          <p className="mt-3 truncate font-mono text-[10px] text-white/25">
+          <p className="mt-3 truncate font-mono text-micro text-ink-500">
             {p.account}
           </p>
         </>

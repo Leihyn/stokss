@@ -1,0 +1,38 @@
+{
+  "name": "Closing Bell",
+  "tagline": "Most tokenized stock trades when nobody can price it",
+  "description": "Warns tokenized-stock liquidity providers when their position is about to sit through hours nobody can price, and hands them a one-click exit they sign themselves.",
+  "colorMode": "dark-only",
+  "brandColor": "#f2b455",
+  "accent": "#f2b455",
+  "accentSecondary": "#3ddc97",
+  "accentRationale": "Two accents, semantic rather than decorative, because the split IS the product argument. #3ddc97 OPEN is an hour in which the underlying has a live price; #f2b455 SHUT is an hour in which it does not and the issuer will not create or redeem. A surface is tinted only when it belongs to one of those two states. The page is amber far more often than green, which is the finding.",
+  "ink": ["#07080a", "#0c0e12", "#11141a", "#171b23", "#222732", "#2f3542"],
+  "text": { "primary": "#ecedf1", "secondary": "#a6abb8", "muted": "#737988" },
+  "semantic": { "open": "#3ddc97", "shut": "#f2b455", "danger": "#f2607a" },
+  "fonts": {
+    "display": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "body": "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "mono": "ui-monospace, \"SF Mono\", SFMono-Regular, Menlo, monospace"
+  },
+  "fontLoading": "system-only",
+  "fontRationale": "No web fonts and no network fetch at paint. Trading-terminal register: system sans for prose, true monospace with tabular figures for every value compared side by side, because the whole page is a comparison of numbers.",
+  "radii": { "control": 8, "card": 14 },
+  "shadowPhilosophy": "none",
+  "shadowRationale": "Depth is one-pixel borders and surface-elevation steps only. Glow reads as marketing; this surface has to read as an instrument a liquidity provider would trust with a position.",
+  "signatureElement": "The week bar: 168 cells, one per hour, 32.5 lit in open and 135.5 unlit in shut. It states the entire thesis without a sentence, and the current hour is marked on it.",
+  "motion": {
+    "keyframes": ["f-rise"],
+    "defaultTransition": "150ms ease-out, colour only",
+    "pressFeedback": "active:scale-[0.99]",
+    "reducedMotion": "all animation and transition collapsed to 0.01ms"
+  },
+  "rejectionList": [
+    "neon", "gradients", "glassmorphism or blur", "emoji",
+    "purple-to-pink crypto palette", "rounded-everything",
+    "bounce or spring on functional controls", "hero illustration",
+    "marketing copy in the product surface",
+    "any number not read back from a real measurement or a live feed"
+  ],
+  "craftSource": "Adopted from ../aval/DESIGN_SYSTEM.md — elevation ladder, zero-shadow rule, five type steps, two radii, colour-only motion, 44px controls. Brand identity is Closing Bell's own."
+}

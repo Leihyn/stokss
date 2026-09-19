@@ -35,8 +35,8 @@ export default function SessionBadge({ initial }: { initial: SessionState }) {
 
   return (
     <div
-      className={`rounded-xl border p-5 ${
-        live ? "border-emerald-400/25 bg-emerald-400/[0.04]" : "border-amber-400/25 bg-amber-400/[0.04]"
+      className={`rounded-card border p-5 ${
+        live ? "border-open-400/25 bg-open-900/40" : "border-shut-400/25 bg-shut-900/40"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -44,40 +44,40 @@ export default function SessionBadge({ initial }: { initial: SessionState }) {
           <span className="relative flex h-2.5 w-2.5">
             <span
               className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${
-                live ? "bg-emerald-400" : "bg-amber-400"
+                live ? "bg-open-400" : "bg-shut-400"
               }`}
             />
             <span
               className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-                live ? "bg-emerald-400" : "bg-amber-400"
+                live ? "bg-open-400" : "bg-shut-400"
               }`}
             />
           </span>
-          <span className="font-mono text-sm font-medium tracking-wide">
+          <span className="tnum font-mono text-body font-medium tracking-wide">
             {live ? "US MARKET OPEN" : "US MARKET CLOSED"}
           </span>
-          <span className="font-mono text-[11px] uppercase tracking-wider text-white/35">
+          <span className="tnum font-mono text-micro uppercase tracking-wider text-ink-500">
             {s.period ?? "unknown"} · {s.exchange ?? "—"} · via {s.source}
           </span>
         </div>
         {s.isTradingHalted && (
-          <span className="rounded bg-red-500/15 px-2 py-0.5 font-mono text-[11px] text-red-300">
+          <span className="rounded bg-danger-900/60 px-2 py-0.5 font-mono text-micro text-danger-400">
             TRADING HALTED
           </span>
         )}
       </div>
 
       {anchorOff && (
-        <div className="mt-4 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3">
-          <div className="font-mono text-xs font-medium text-amber-300">
+        <div className="mt-4 rounded-control border border-shut-400/25 bg-shut-900/50 px-4 py-3">
+          <div className="tnum font-mono text-body font-medium text-shut-400">
             CREATION AND REDEMPTION DISABLED
           </div>
-          <p className="mt-1.5 text-xs leading-relaxed text-white/55">
+          <p className="mt-1.5 text-body leading-relaxed text-ink-300">
             The issuer caps orders at{" "}
-            <span className="font-mono text-white/80">
+            <span className="tnum font-mono text-ink-100">
               ${s.maxOrderFiatValue?.toLocaleString() ?? "0"}
             </span>{" "}
-            during <span className="font-mono">{s.period}</span>. Nothing is arbitraging the
+            during <span className="tnum font-mono">{s.period}</span>. Nothing is arbitraging the
             token back to net asset value, yet it keeps trading on Solana.
           </p>
         </div>
@@ -85,32 +85,32 @@ export default function SessionBadge({ initial }: { initial: SessionState }) {
 
       <dl className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
-          <dt className="font-mono text-[11px] uppercase tracking-wider text-white/35">
+          <dt className="tnum font-mono text-micro uppercase tracking-wider text-ink-500">
             Underlying priced again in
           </dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-amber-400">
+          <dd className="tnum mt-1 font-mono text-2xl font-semibold tabular-nums text-shut-400">
             {dur(toRegular)}
           </dd>
-          <dd className="mt-0.5 font-mono text-[11px] text-white/35">
+          <dd className="mt-0.5 font-mono text-micro text-ink-500">
             {utc(s.nextRegularOpenAt)} · regular session
           </dd>
         </div>
         <div>
-          <dt className="font-mono text-[11px] uppercase tracking-wider text-white/35">
+          <dt className="tnum font-mono text-micro uppercase tracking-wider text-ink-500">
             Issuer session changes in
           </dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums text-white/70">
+          <dd className="tnum mt-1 font-mono text-2xl font-semibold tabular-nums text-ink-300">
             {toIssuer === null ? "—" : dur(toIssuer)}
           </dd>
-          <dd className="mt-0.5 font-mono text-[11px] text-white/35">
+          <dd className="mt-0.5 font-mono text-micro text-ink-500">
             {utc(s.nextChangeAt)} · create / redeem
           </dd>
         </div>
       </dl>
 
       {s.unpricedHoursAhead > 0 && (
-        <p className="mt-4 border-t border-white/10 pt-3.5 text-sm leading-relaxed text-white/55">
-          <span className="font-mono font-semibold text-amber-400">
+        <p className="mt-4 border-t border-base-700 pt-3.5 text-body leading-relaxed text-ink-300">
+          <span className="tnum font-mono font-semibold text-shut-400">
             {s.unpricedHoursAhead.toFixed(1)} hours
           </span>{" "}
           of trading ahead before anyone can price this asset again. Liquidity providers quote

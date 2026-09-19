@@ -3,30 +3,110 @@
   "method": "Hourly OHLCV from GeckoTerminal across xStocks USDC pools, 14 days, classified by US equity session. Sep 2026 is EDT, so regular session is 13:30-20:00 UTC.",
   "coverage": "SPYx and KOx main USDC pools. QQQx OHLCV and AAPLx/STRCx pool lookups hit rate limits.",
   "sessions": [
-    { "session": "MARKET",    "label": "Regular session", "hours": 120, "hourShare": 17.9, "volumeUsd": 19120174, "volumeShare": 29.1, "meanAbsHourlyReturnPct": 0.570 },
-    { "session": "EXTENDED",  "label": "Pre / post market", "hours": 203, "hourShare": 30.2, "volumeUsd": 22728741, "volumeShare": 34.6, "meanAbsHourlyReturnPct": 0.533 },
-    { "session": "OVERNIGHT", "label": "Overnight", "hours": 159, "hourShare": 23.7, "volumeUsd": 11275958, "volumeShare": 17.2, "meanAbsHourlyReturnPct": 0.575 },
-    { "session": "WEEKEND",   "label": "Weekend", "hours": 190, "hourShare": 28.3, "volumeUsd": 12561589, "volumeShare": 19.1, "meanAbsHourlyReturnPct": 0.689 }
+    {
+      "session": "MARKET",
+      "label": "Regular session",
+      "hours": 120,
+      "hourShare": 17.9,
+      "volumeUsd": 19120174,
+      "volumeShare": 29.1,
+      "meanAbsHourlyReturnPct": 0.57
+    },
+    {
+      "session": "EXTENDED",
+      "label": "Pre / post market",
+      "hours": 203,
+      "hourShare": 30.2,
+      "volumeUsd": 22728741,
+      "volumeShare": 34.6,
+      "meanAbsHourlyReturnPct": 0.533
+    },
+    {
+      "session": "OVERNIGHT",
+      "label": "Overnight",
+      "hours": 159,
+      "hourShare": 23.7,
+      "volumeUsd": 11275958,
+      "volumeShare": 17.2,
+      "meanAbsHourlyReturnPct": 0.575
+    },
+    {
+      "session": "WEEKEND",
+      "label": "Weekend",
+      "hours": 190,
+      "hourShare": 28.3,
+      "volumeUsd": 12561589,
+      "volumeShare": 19.1,
+      "meanAbsHourlyReturnPct": 0.689
+    }
   ],
   "headline": {
     "volumeOutsideRegularSessionPct": 70.9,
     "volumeFullyClosedPct": 36.3,
     "weekendVolatilityPct": 0.689,
-    "marketVolatilityPct": 0.570,
+    "marketVolatilityPct": 0.57,
     "weekendExcessPct": 20.9
   },
   "perToken": {
     "SPYx": [
-      { "session": "MARKET", "hours": 60, "volumeUsd": 18297499, "volumeShare": 29.2, "meanAbsHourlyReturnPct": 0.319 },
-      { "session": "EXTENDED", "hours": 100, "volumeUsd": 21999373, "volumeShare": 35.1, "meanAbsHourlyReturnPct": 0.362 },
-      { "session": "OVERNIGHT", "hours": 80, "volumeUsd": 10566419, "volumeShare": 16.9, "meanAbsHourlyReturnPct": 0.287 },
-      { "session": "WEEKEND", "hours": 96, "volumeUsd": 11827202, "volumeShare": 18.9, "meanAbsHourlyReturnPct": 0.316 }
+      {
+        "session": "MARKET",
+        "hours": 60,
+        "volumeUsd": 18297499,
+        "volumeShare": 29.2,
+        "meanAbsHourlyReturnPct": 0.319
+      },
+      {
+        "session": "EXTENDED",
+        "hours": 100,
+        "volumeUsd": 21999373,
+        "volumeShare": 35.1,
+        "meanAbsHourlyReturnPct": 0.362
+      },
+      {
+        "session": "OVERNIGHT",
+        "hours": 80,
+        "volumeUsd": 10566419,
+        "volumeShare": 16.9,
+        "meanAbsHourlyReturnPct": 0.287
+      },
+      {
+        "session": "WEEKEND",
+        "hours": 96,
+        "volumeUsd": 11827202,
+        "volumeShare": 18.9,
+        "meanAbsHourlyReturnPct": 0.316
+      }
     ],
     "KOx": [
-      { "session": "MARKET", "hours": 60, "volumeUsd": 822676, "volumeShare": 27.5, "meanAbsHourlyReturnPct": 0.821 },
-      { "session": "EXTENDED", "hours": 103, "volumeUsd": 729367, "volumeShare": 24.3, "meanAbsHourlyReturnPct": 0.699 },
-      { "session": "OVERNIGHT", "hours": 79, "volumeUsd": 709539, "volumeShare": 23.7, "meanAbsHourlyReturnPct": 0.867 },
-      { "session": "WEEKEND", "hours": 94, "volumeUsd": 734387, "volumeShare": 24.5, "meanAbsHourlyReturnPct": 1.071 }
+      {
+        "session": "MARKET",
+        "hours": 60,
+        "volumeUsd": 822676,
+        "volumeShare": 27.5,
+        "meanAbsHourlyReturnPct": 0.821
+      },
+      {
+        "session": "EXTENDED",
+        "hours": 103,
+        "volumeUsd": 729367,
+        "volumeShare": 24.3,
+        "meanAbsHourlyReturnPct": 0.699
+      },
+      {
+        "session": "OVERNIGHT",
+        "hours": 79,
+        "volumeUsd": 709539,
+        "volumeShare": 23.7,
+        "meanAbsHourlyReturnPct": 0.867
+      },
+      {
+        "session": "WEEKEND",
+        "hours": 94,
+        "volumeUsd": 734387,
+        "volumeShare": 24.5,
+        "meanAbsHourlyReturnPct": 1.071
+      }
     ]
   },
   "liquidity": {
@@ -34,29 +114,88 @@
     "pools": 20,
     "totalUsd": 11782783,
     "byVenue": [
-      { "venue": "raydium-clmm", "usd": 10976952, "share": 93.2 },
-      { "venue": "orca", "usd": 380728, "share": 3.2 },
-      { "venue": "byreal", "usd": 319321, "share": 2.7 },
-      { "venue": "pancakeswap-v3-solana", "usd": 33663, "share": 0.3 },
-      { "venue": "raydium", "usd": 28081, "share": 0.2 }
+      {
+        "venue": "raydium-clmm",
+        "usd": 10976952,
+        "share": 93.2
+      },
+      {
+        "venue": "orca",
+        "usd": 380728,
+        "share": 3.2
+      },
+      {
+        "venue": "byreal",
+        "usd": 319321,
+        "share": 2.7
+      },
+      {
+        "venue": "pancakeswap-v3-solana",
+        "usd": 33663,
+        "share": 0.3
+      },
+      {
+        "venue": "raydium",
+        "usd": 28081,
+        "share": 0.2
+      }
     ],
     "topPools": [
-      { "name": "STONK / SPYx", "usd": 6012385, "share": 51.0, "venue": "raydium-clmm", "note": "memecoin pair" },
-      { "name": "SPYx / USDC", "usd": 3014711, "share": 25.6, "venue": "raydium-clmm" },
-      { "name": "SPYx / SOL", "usd": 1300286, "share": 11.0, "venue": "raydium-clmm" }
+      {
+        "name": "STONK / SPYx",
+        "usd": 6012385,
+        "share": 51.0,
+        "venue": "raydium-clmm",
+        "note": "memecoin pair"
+      },
+      {
+        "name": "SPYx / USDC",
+        "usd": 3014711,
+        "share": 25.6,
+        "venue": "raydium-clmm"
+      },
+      {
+        "name": "SPYx / SOL",
+        "usd": 1300286,
+        "share": 11.0,
+        "venue": "raydium-clmm"
+      }
     ]
   },
   "issuerControl": {
-    "delegateAddress": "5aMNNLQJwAEeoemTEMkv5NVjqKwvvefRYCQ5Z67HFvEq",
-    "signatures": 1844,
-    "successful": 1832,
-    "decoded": 1832,
-    "coveragePct": 100.0,
-    "historyFrom": "2025-06-10",
-    "historyTo": "2026-09-18",
+    "summary": "xStocks holds sweeping power over every holder and has never exercised any of it. Both authorities scanned at 100% coverage over their full on-chain history.",
+    "authorities": [
+      {
+        "role": "Permanent delegate",
+        "address": "5aMNNLQJwAEeoemTEMkv5NVjqKwvvefRYCQ5Z67HFvEq",
+        "power": "Can move any holder's tokens at will",
+        "historyFrom": "2025-06-10",
+        "historyTo": "2026-09-18",
+        "signatures": 1844,
+        "successful": 1832,
+        "decoded": 1832,
+        "coveragePct": 100.0,
+        "timesUsedAgainstAHolder": 0,
+        "whatItActuallyDoes": "Mint factory. Created 1,474 xStocks mints.",
+        "accountType": "plain system-owned keypair, not an SPL multisig"
+      },
+      {
+        "role": "Pause + freeze authority",
+        "address": "JDq14BWvqCRFNu1krb12bcRpbGtJZ1FLEakMw6FdxJNs",
+        "power": "Can halt all transfers and freeze individual accounts",
+        "historyFrom": "2025-06-09",
+        "historyTo": "2026-04-29",
+        "signatures": 15953,
+        "successful": 15856,
+        "decoded": 15856,
+        "coveragePct": 100.0,
+        "timesUsedAgainstAHolder": 0,
+        "whatItActuallyDoes": "159 setAuthority calls and 603 mintTo. Zero freezes, thaws, pauses or seizures. Routes through Squads multisig (468 calls).",
+        "accountType": "plain system-owned keypair, multisig-operated via Squads"
+      }
+    ],
     "mintsCreated": 1474,
-    "tokenMovingInstructionsByDelegate": 0,
-    "note": "The permanent delegate is a plain system-owned keypair, not an SPL multisig, so any use of it must appear in this signature history. Full history decoded at 100% coverage.",
-    "ondoContrast": "Ondo issues the same underlying shares on Solana with Token-2022 and Scaled UI Amount, but takes no permanent delegate at all."
+    "ondoContrast": "Ondo issues the same underlying shares on Solana, also Token-2022 with Scaled UI Amount, and takes NO permanent delegate at all. The power is an xStocks choice, not an RWA requirement.",
+    "method": "Every signature for each authority paginated in full, then every successful transaction decoded and checked for Token-2022 instructions whose authority field equals the address. Both are plain keypairs rather than SPL multisigs, so any use MUST appear in their own signature history."
   }
 }

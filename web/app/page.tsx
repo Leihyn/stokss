@@ -132,23 +132,30 @@ export default async function Home() {
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-          <h3 className="mb-4 text-sm font-medium">What the issuer can do to your position</h3>
-          <dl className="space-y-2.5 font-mono text-xs">
-            {[
-              ["Permanent delegate", "armed"],
-              ["Times exercised", `${issuerControl.tokenMovingInstructionsByDelegate} in ${issuerControl.mintsCreated} mints`],
-              ["History decoded", `${issuerControl.coveragePct}% of ${issuerControl.successful} tx`],
-              ["Ondo, same asset", "no delegate at all"],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-4 border-b border-white/5 pb-2.5">
-                <dt className="text-white/45">{k}</dt>
-                <dd className="text-right text-white/80">{v}</dd>
+          <h3 className="mb-1 text-sm font-medium">What the issuer can do to your position</h3>
+          <p className="mb-4 text-xs leading-relaxed text-white/45">
+            Both authorities scanned at 100% coverage over their full on-chain history.
+            17,688 transactions decoded.
+          </p>
+          <div className="space-y-3">
+            {issuerControl.authorities.map((a) => (
+              <div key={a.address} className="rounded-lg border border-white/10 bg-black/20 p-3.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs font-medium text-white/80">{a.role}</span>
+                  <span className="shrink-0 rounded bg-emerald-400/10 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+                    USED {a.timesUsedAgainstAHolder} TIMES
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-white/45">{a.power}</p>
+                <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-white/30">
+                  {a.decoded.toLocaleString()} tx decoded · {a.coveragePct}% · {a.historyFrom} to{" "}
+                  {a.historyTo}
+                </p>
               </div>
             ))}
-          </dl>
+          </div>
           <p className="mt-4 text-xs leading-relaxed text-white/40">
-            xStocks can move any holder&apos;s tokens at will and never has, across the full
-            history from {issuerControl.historyFrom}. Nobody discloses either half of that.
+            {issuerControl.ondoContrast}
           </p>
         </div>
       </section>

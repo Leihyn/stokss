@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Raydium, CLMM_PROGRAM_ID } from "@raydium-io/raydium-sdk-v2";
 
 /** xStocks mints, from the issuer's Solana deployments. */
@@ -44,6 +46,7 @@ export async function loadPositions(owner: PublicKey): Promise<XPosition[]> {
 }
 
 export default function Positions() {
+  const { publicKey } = useWallet();
   const [addr, setAddr] = useState("");
   const [status, setStatus] = useState("");
   const [rows, setRows] = useState<XPosition[]>([]);
@@ -52,7 +55,7 @@ export default function Positions() {
   const go = useCallback(async () => {
     setBusy(true); setStatus("loading..."); setRows([]);
     try {
-      const owner = new PublicKey(addr.trim());
+      const owner = publicKey ?? new PublicKey(addr.trim());
       const t0 = performance.now();
       const p = await loadPositions(owner);
       setRows(p);
@@ -62,7 +65,7 @@ export default function Positions() {
     } finally {
       setBusy(false);
     }
-  }, [addr]);
+  }, [addr, publicKey]);
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
@@ -71,6 +74,15 @@ export default function Positions() {
         93.2% of SPYx liquidity sits on raydium-clmm. Paste an owner address to load its
         positions through the server-side RPC proxy.
       </p>
+      <div className="mb-3">
+        <WalletMultiButton style={{ height: 34, fontSize: 12, lineHeight: "34px", borderRadius: 6 }} />
+        {publicKey && (
+          <p className="mt-2 font-mono text-[11px] text-emerald-300/80">
+            connected {publicKey.toBase58().slice(0, 4)}…{publicKey.toBase58().slice(-4)} · the
+            pasted address below is ignored while a wallet is connected
+          </p>
+        )}
+      </div>
       <div className="flex gap-2">
         <input
           value={addr}
@@ -81,7 +93,7 @@ export default function Positions() {
         />
         <button
           onClick={go}
-          disabled={busy || !addr.trim()}
+          disabled={busy || (!addr.trim() && !publicKey)}
           className="shrink-0 rounded-md border border-white/15 px-3 py-1.5 font-mono text-xs text-white/70 hover:bg-white/5 disabled:opacity-40"
         >
           {busy ? "loading" : "load"}

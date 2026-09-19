@@ -72,3 +72,57 @@ range: 2025-06-09T08:55:17  ->  2026-04-29T07:26:37
   progress 11760/15856, unresolved 0, hits 155
   progress 12010/15856, unresolved 0, hits 155
   progress 12260/15856, unresolved 0, hits 155
+  progress 12510/15856, unresolved 0, hits 155
+  progress 12760/15856, unresolved 0, hits 155
+  progress 13010/15856, unresolved 0, hits 155
+  progress 13260/15856, unresolved 0, hits 155
+  progress 13510/15856, unresolved 0, hits 155
+  progress 13760/15856, unresolved 0, hits 155
+  progress 14010/15856, unresolved 0, hits 155
+  progress 14260/15856, unresolved 0, hits 155
+  progress 14510/15856, unresolved 0, hits 155
+  progress 14760/15856, unresolved 0, hits 155
+  progress 15010/15856, unresolved 0, hits 155
+  progress 15260/15856, unresolved 0, hits 155
+  progress 15510/15856, unresolved 0, hits 155
+  progress 15760/15856, unresolved 0, hits 155
+
+COVERAGE: decoded 15856/15856 (100.0%), unresolved 0
+
+Programs touched:
+  11111111111111111111111111111111  258670
+  ComputeBudget111111111111111111111111111111  30160
+  TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb  969
+  SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf  468
+  ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL  55
+  6doghB248px58JSSwG4qejQ46kFMW4AMj7vzJnWZHNZn  34
+  ByHjx66WM727yKu4t1aTP5pKjtNQJYczpvYo5syhMND2  34
+  76y77prsiCMvXMjuoZ5VRrhG5qYBrUMYTE5WgHqgjEn6  34
+  MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr  4
+  DeJBGdMFa1uynnnKiwrVioatTuHmNLpyFKnmB5kaFdzQ  1
+
+Token-2022 instruction types:
+  mintTo                             603
+  setAuthority                       163
+  getAccountDataSize                 54
+  initializeImmutableOwner           54
+  initializeAccount3                 54
+  transferChecked                    18
+  transfer                           2
+  initializeMetadataPointer          2
+  initializePermanentDelegate        2
+  initializeDefaultAccountState      2
+  initializeScaledUiAmountConfig     2
+  initializePausableConfig           2
+  initializeConfidentialTransferMint 2
+  initializeTransferHook             2
+  initializeMint                     2
+  initializeTokenMetadata            2
+  updateTransferHook                 2
+  updateTokenMetadataAuthority       1
+
+>>> COERCIVE instructions authorised by this address: 159
+    setAuthority: 159
+>>> Of those, freeze/thaw/pause/resume/transfer/burn (i.e. acting ON a holder): 0
+
+DONE

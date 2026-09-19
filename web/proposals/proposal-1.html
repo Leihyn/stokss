@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Closing Bell — The Dark Week</title>
+<meta name="description" content="168 hours a week on Solana. 32.5 of them have a price.">
+
+<!--
+================================================================================
+UX ARCHITECTURE — PROPOSAL 1, "THE DARK WEEK"
+DNA-F-H-F-D-X  (Full-bleed · Hidden nav · Full-viewport hero · Duotone · Mixed type)
+================================================================================
+
+ENTRY
+  A liquidity provider arrives from a warning (push, Telegram, an X post) or from
+  search, on a phone, usually while the market is shut — which is 80.7% of the week.
+  They land INSIDE the week: a full-viewport, edge-to-edge 168-cell grid with 32.5
+  cells lit. No headline runs first. The picture makes the argument; the prose below
+  confirms it. Time-to-comprehension target: under three seconds, no reading required.
+
+EXIT
+  One of three, in priority order:
+    1. Sign an exit on an exposed position (primary; the product's whole job).
+    2. Arm a warning for the next close (secondary; returns them to the top of funnel).
+    3. Leave convinced the window is real (the thesis is the retention mechanism).
+
+SCREENS (this document is screen 1 of 3 in the product)
+    1. THE WEEK          — this page. Public. Thesis + live state + provenance.
+    2. POSITION MONITOR  — wallet-scoped. The states panel below is its real shell.
+    3. EXIT SIGNER       — transaction preview, simulation result, user signs. Not shown.
+
+HAPPY PATH
+    land inside the week
+      -> read the lit/dead ratio pre-verbally
+      -> countdown confirms how long the dark runs (live, ticking)
+      -> prose + session table supply the evidence (volatility does not stop)
+      -> monitor reports 2,777 positions exposed right now
+      -> "Prepare exit" -> screen 3 -> user signs. Protocol never holds keys.
+
+SCREENS' STATES (all four demonstrated live in section 05)
+    DATA     — positions resolved; exit is armed.
+    LOADING  — skeleton shaped like the week grid + a determinate hairline that
+               reports real progress (pool n of 76). Never a spinner.
+    EMPTY    — wallet resolved, no CLMM positions. Offers the watch path instead.
+    ERROR    — RPC read failed. Danger accent, the ONLY place a third hue appears.
+               States what failed, when, and gives one retry. No dead end.
+
+NAVIGATION (hidden-nav gene)
+    Nav is absent at rest — nothing competes with the grid on first paint. It is
+    reachable two ways: (a) the INDEX trigger, always present top-left, opens a
+    full-bleed overlay; (b) a sticky instrument rail reveals itself once the hero
+    scrolls away, carrying the live countdown and market state so the reader never
+    loses the clock. Escape closes; focus returns to the trigger.
+
+TYPOGRAPHY (mixed-type gene)
+    Three registers, visibly distinct, zero network requests:
+      · condensed industrial grotesque — section marks and structural labels
+      · system sans                     — prose only
+      · true monospace, tabular-nums    — EVERY number, without exception
+    No Google Fonts: brand.json forbids a network fetch at paint, and this file has
+    to open standalone and offline. The gene is honoured with faces already present.
+
+DATA
+    Every figure is measured. Nothing on this page is illustrative. Session
+    statistics are a 672-hour (four-week) sample; the live countdown, the market
+    state and the current-hour ring are computed from the visitor's clock in UTC.
+================================================================================
+-->
+
+<script>document.documentElement.className="js";</script>
+<style>
+/* ── tokens ───────────────────────────────────────────────────────────────── */
+:root{
+  --base-950:#07080a; --base-900:#0c0e12; --base-850:#11141a;
+  --base-800:#171b23; --base-700:#222732; --base-600:#2f3542;
+
+  --ink-100:#ecedf1; --ink-300:#a6abb8; --ink-400:#8b91a0; --ink-500:#737988;
+
+  --open-400:#3ddc97; --open-900:#06291c;
+  --shut-400:#f2b455; --shut-900:#2a1c06;
+  --danger-400:#f2607a; --danger-900:#2a0d15;
+
+  --radius-control:8px; --radius-card:14px;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+  --gutter:16px;
+  --rail:34px;
+
+  --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --font-display:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",
+                 "Liberation Sans Narrow","Oswald",ui-sans-serif,system-ui,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--base-950); color:var(--ink-300);
+  font-family:var(--font-sans); font-size:13px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body.is-locked{overflow:hidden}
+
+/* ── type steps ───────────────────────────────────────────────────────────── */
+.t-micro{font-size:11px; line-height:1.25; letter-spacing:.12em; text-transform:uppercase}
+.t-body{font-size:13px; line-height:1.6}
+.t-read{font-size:15px; line-height:1.65}
+.t-lede{font-size:17px; line-height:1.45}
+
+.disp{
+  font-family:var(--font-display); font-stretch:75%;
+  text-transform:uppercase; letter-spacing:.04em; font-weight:700;
+  color:var(--ink-100);
+}
+.num{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1}
+
+h1,h2,h3{margin:0; font-weight:700}
+p{margin:0}
+a{color:inherit}
+
+/* ── a11y primitives ──────────────────────────────────────────────────────── */
+.vh{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0}
+:focus-visible{outline:2px solid var(--open-400); outline-offset:2px; border-radius:2px}
+.skip{
+  position:fixed; top:8px; left:8px; z-index:120; transform:translateY(-200%);
+  background:var(--base-850); color:var(--ink-100); border:1px solid var(--base-600);
+  border-radius:var(--radius-control); padding:12px 16px; font-size:11px;
+  letter-spacing:.12em; text-transform:uppercase; text-decoration:none;
+  transition:transform 180ms var(--ease);
+}
+.skip:focus{transform:translateY(0)}
+
+/* ── controls ─────────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  min-height:44px; padding:0 18px; border-radius:var(--radius-control);
+  background:var(--base-850); color:var(--ink-100);
+  border:1px solid var(--base-600); font-family:var(--font-sans);
+  font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:600;
+  cursor:pointer; text-decoration:none;
+  transition:background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+.btn:hover{background:var(--base-800); border-color:var(--ink-500)}
+.btn:active{transform:scale(.99)}
+.btn--primary{background:rgba(242,180,85,.10); border-color:rgba(242,180,85,.45); color:var(--shut-400)}
+.btn--primary:hover{background:rgba(242,180,85,.16); border-color:var(--shut-400)}
+
+/* ── dot + label severity ─────────────────────────────────────────────────── */
+.dot{width:7px; height:7px; border-radius:50%; flex:0 0 auto; display:inline-block}
+.dot--shut{background:var(--shut-400)}
+.dot--open{background:var(--open-400)}
+.dot--danger{background:var(--danger-400)}
+.dot--idle{background:var(--base-600)}
+
+/* ── DNA badge ────────────────────────────────────────────────────────────── */
+.dna{
+  position:fixed; top:12px; right:12px; z-index:90;
+  display:flex; align-items:center; gap:8px; height:32px; padding:0 10px;
+  background:rgba(12,14,18,.86); border:1px solid var(--base-700);
+  border-radius:var(--radius-control);
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.14em;
+  color:var(--ink-400);
+}
+.dna b{color:var(--shut-400); font-weight:400}
+
+/* ── hidden nav: trigger, overlay, revealed rail ──────────────────────────── */
+.trigger{
+  position:fixed; top:12px; left:12px; z-index:90;
+  display:inline-flex; align-items:center; gap:10px;
+  height:32px; padding:0 12px;
+  background:rgba(12,14,18,.86); border:1px solid var(--base-700);
+  border-radius:var(--radius-control); color:var(--ink-300);
+  font-family:var(--font-sans); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; cursor:pointer;
+  transition:color 150ms ease-out, border-color 150ms ease-out;
+}
+.trigger:hover{color:var(--ink-100); border-color:var(--base-600)}
+.trigger .bars{display:flex; flex-direction:column; gap:3px; width:12px}
+.trigger .bars i{display:block; height:1px; background:currentColor}
+.trigger .bars i:nth-child(2){width:8px}
+
+.nav{position:fixed; inset:0; z-index:110; display:grid; grid-template-rows:auto 1fr}
+.nav[hidden]{display:none}
+.nav__scrim{position:absolute; inset:0; background:rgba(7,8,10,.96); border:0}
+.nav__inner{position:relative; padding:var(--gutter); padding-top:12px}
+.nav__top{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:28px}
+.nav__list{position:relative; display:grid; gap:1px; background:var(--base-800);
+           border-block:1px solid var(--base-800); max-width:980px}
+.nav__item{
+  display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:14px;
+  min-height:60px; padding:0 14px; background:var(--base-950);
+  text-decoration:none; color:var(--ink-300);
+  transition:background-color 150ms ease-out, color 150ms ease-out;
+}
+.nav__item:hover{background:var(--base-900); color:var(--ink-100)}
+.nav__idx{font-family:var(--font-mono); font-size:11px; color:var(--ink-500)}
+.nav__fig{font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+          font-size:13px; color:var(--shut-400)}
+
+.rail{
+  position:fixed; top:0; left:0; right:0; z-index:80;
+  display:flex; align-items:center; gap:14px;
+  height:44px; padding:0 calc(var(--gutter) + 124px) 0 calc(var(--gutter) + 108px);
+  background:rgba(7,8,10,.94); border-bottom:1px solid var(--base-800);
+  transform:translateY(-100%); opacity:0; pointer-events:none;
+  transition:transform 240ms var(--ease), opacity 240ms var(--ease);
+}
+.rail.is-shown{transform:translateY(0); opacity:1; pointer-events:auto}
+.rail__clock{font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+             font-size:14px; color:var(--shut-400); letter-spacing:.02em}
+.rail__sep{width:1px; height:16px; background:var(--base-700)}
+.rail__state{display:flex; align-items:center; gap:8px; font-size:11px;
+             letter-spacing:.12em; text-transform:uppercase; color:var(--ink-400)}
+.rail__meta{margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--ink-500)}
+
+/* ── section shell (full-bleed) ───────────────────────────────────────────── */
+.band{border-top:1px solid var(--base-800); padding:0 var(--gutter)}
+.wrap{max-width:1320px; margin:0 auto; padding:56px 0}
+.mark{display:flex; align-items:baseline; gap:14px; margin-bottom:28px}
+.mark__n{font-family:var(--font-mono); font-size:11px; color:var(--shut-400); letter-spacing:.14em}
+.mark__t{font-size:clamp(20px,3.4vw,30px); line-height:1.05}
+
+/* ═══ HERO: full-viewport, full-bleed week grid ═══════════════════════════ */
+.hero{
+  min-height:100svh; min-height:100vh;
+  display:flex; flex-direction:column;
+  padding:56px var(--gutter) 0;
+}
+.hero__head{display:flex; align-items:flex-end; justify-content:space-between;
+            gap:16px; flex-wrap:wrap; padding-bottom:16px}
+.hero__eyebrow{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-500)}
+.hero__eyebrow b{color:var(--ink-300); font-weight:400}
+.hero__legend{display:flex; gap:18px; flex-wrap:wrap; align-items:center}
+.lg{display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-400)}
+.lg__sw{width:14px; height:10px; border-radius:2px; flex:0 0 auto}
+.lg__sw--open{background:rgba(61,220,151,.82)}
+.lg__sw--shut{background:var(--base-850); border:1px solid var(--base-800)}
+.lg__sw--now{background:var(--base-850); outline:2px solid var(--shut-400); outline-offset:-1px}
+
+.week{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:6px}
+.week__ruler,.week__body{display:grid; grid-template-columns:var(--rail) 1fr; gap:8px}
+.week__body{flex:1 1 auto; min-height:0; grid-template-rows:minmax(0,1fr)}
+.ruler{display:grid; grid-template-columns:repeat(24,minmax(0,1fr)); gap:2px}
+.ruler span{font-family:var(--font-mono); font-size:9px; color:var(--ink-500);
+            text-align:center; letter-spacing:0}
+.days{display:grid; grid-template-rows:repeat(7,minmax(0,1fr)); gap:2px}
+.day{display:flex; align-items:center; gap:5px; font-family:var(--font-mono);
+     font-size:10px; color:var(--ink-400); letter-spacing:.06em}
+.day--wknd{color:var(--shut-400)}
+.day i{width:2px; align-self:stretch; background:transparent; flex:0 0 auto}
+.day--wknd i{background:rgba(242,180,85,.55)}
+
+.grid{display:grid; grid-template-columns:repeat(24,minmax(0,1fr));
+      grid-template-rows:repeat(7,minmax(0,1fr)); gap:2px}
+.cell{position:relative; background:var(--base-850); border-radius:1px}
+.cell[data-s="open"]{background:rgba(61,220,151,.82)}
+.cell[data-s="half"] i{position:absolute; inset:0 0 0 50%; background:rgba(61,220,151,.82);
+                        border-radius:0 1px 1px 0}
+.cell.is-now{outline:2px solid var(--shut-400); outline-offset:-1px; z-index:2}
+
+.hero__foot{
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:18px 0 22px; margin-top:14px; border-top:1px solid var(--base-800);
+}
+.hero__stat{display:flex; flex-direction:column; gap:3px}
+.hero__stat dt{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-500)}
+.hero__stat dd{margin:0; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+               font-size:14px; color:var(--ink-100)}
+.hero__stat dd.is-shut{color:var(--shut-400)}
+.hero__stat dd.is-open{color:var(--open-400)}
+.hero__div{width:1px; height:30px; background:var(--base-800)}
+.hero__note{margin-left:auto; font-size:11px; color:var(--ink-500); max-width:38ch}
+
+/* ═══ COUNTDOWN INSTRUMENT ════════════════════════════════════════════════ */
+.clock{background:var(--base-900); border-top:1px solid var(--base-800); padding:0 var(--gutter)}
+.clock__in{max-width:1320px; margin:0 auto; padding:44px 0 40px}
+.clock__lab{display:flex; align-items:center; gap:10px; font-size:11px; letter-spacing:.12em;
+            text-transform:uppercase; color:var(--ink-400); margin-bottom:6px}
+.clock__big{
+  font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+  font-size:clamp(54px,13.5vw,168px); line-height:.92; letter-spacing:-.02em;
+  color:var(--shut-400); margin:4px 0 2px; display:block;
+}
+.clock__unit{font-family:var(--font-mono); font-size:11px; color:var(--ink-400);
+             letter-spacing:.22em; text-transform:uppercase; margin:8px 0 22px}
+.clock__row{display:flex; gap:26px; flex-wrap:wrap; align-items:center;
+            border-top:1px solid var(--base-800); padding-top:18px}
+.clock__cap{display:flex; flex-direction:column; gap:3px}
+.clock__cap dt{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-400)}
+.clock__cap dd{margin:0; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+               font-size:14px; color:var(--ink-100)}
+
+/* ═══ ARGUMENT ════════════════════════════════════════════════════════════ */
+.args{display:grid; gap:1px; background:var(--base-800);
+      border-block:1px solid var(--base-800)}
+@media (min-width:860px){.args{grid-template-columns:repeat(2,1fr)}}
+.arg{background:var(--base-950); padding:24px 20px; display:flex; flex-direction:column; gap:10px}
+.arg--wide{grid-column:1/-1; background:rgba(242,180,85,.05)}
+.arg__k{font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+        font-size:clamp(26px,5vw,40px); line-height:1; color:var(--shut-400); letter-spacing:-.01em}
+.arg__k.is-open{color:var(--open-400)}
+.arg__k small{font-size:.44em; letter-spacing:.04em; color:var(--ink-400); margin-left:4px}
+.arg p:not(.arg__k){color:var(--ink-300); font-size:15px; line-height:1.6; max-width:56ch}
+.arg p.t-lede{font-size:17px; line-height:1.45; max-width:64ch}
+.arg code{font-family:var(--font-mono); font-size:13px; color:var(--ink-100);
+          background:var(--base-850); border:1px solid var(--base-800);
+          border-radius:4px; padding:1px 5px}
+
+/* ═══ SESSION TABLE ═══════════════════════════════════════════════════════ */
+.tbl{width:100%; border-collapse:collapse; font-size:13px}
+.tbl caption{text-align:left; color:var(--ink-500); font-size:11px; letter-spacing:.12em;
+             text-transform:uppercase; padding-bottom:12px}
+.tbl th,.tbl td{padding:14px 12px; text-align:right; border-bottom:1px solid var(--base-800)}
+.tbl th:first-child,.tbl td:first-child{text-align:left; padding-left:14px}
+.tbl thead th{
+  font-family:var(--font-display); font-stretch:75%; font-weight:700;
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-500); border-bottom:1px solid var(--base-700); white-space:nowrap;
+}
+.tbl tbody th{font-weight:600; color:var(--ink-100); font-size:13px; letter-spacing:.04em}
+.tbl td{font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--ink-300)}
+.tbl tbody tr{transition:background-color 150ms ease-out}
+.tbl tbody tr:hover{background:var(--base-900)}
+.tbl .sess{display:flex; align-items:center; gap:10px}
+.tbl tr.is-peak{background:rgba(242,180,85,.06)}
+.tbl tr.is-peak:hover{background:rgba(242,180,85,.09)}
+.tbl tr.is-peak th{color:var(--shut-400); font-size:15px}
+.tbl tr.is-peak td{color:var(--ink-100)}
+.tbl tr.is-peak td.mv{color:var(--shut-400); font-size:15px}
+.bar{display:block; position:relative; width:100%; min-width:88px; height:10px;
+     background:var(--base-850); border:1px solid var(--base-800); border-radius:2px}
+.bar i{display:block; position:absolute; inset:0 auto 0 0; width:var(--w);
+       background:rgba(242,180,85,.34); border-right:1px solid var(--shut-400)}
+.tbl tr.is-peak .bar i{background:rgba(242,180,85,.58)}
+.tbl td.barcell{width:34%; padding-right:14px}
+.foot-note{margin-top:16px; color:var(--ink-400); font-size:11px; max-width:72ch}
+
+.ko{
+  margin-top:26px; display:grid; gap:1px; background:var(--base-800);
+  border:1px solid var(--base-800); border-radius:var(--radius-card); overflow:hidden;
+}
+@media (min-width:720px){.ko{grid-template-columns:1fr 1fr auto}}
+.ko__c{background:var(--base-900); padding:20px; display:flex; flex-direction:column; gap:6px}
+.ko__c--say{background:var(--base-850); justify-content:center; min-width:min(100%,320px)}
+.ko__lab{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-400)}
+.ko__v{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:30px; line-height:1}
+.ko__v--w{color:var(--shut-400)} .ko__v--m{color:var(--ink-100)}
+.ko__c--say p{font-size:15px; line-height:1.6; color:var(--ink-100)}
+
+/* ═══ FEED PANELS (deliberately unequal) ══════════════════════════════════ */
+.feed{display:grid; gap:1px; background:var(--base-800); border:1px solid var(--base-800);
+      border-radius:var(--radius-card); overflow:hidden}
+@media (min-width:900px){
+  .feed{grid-template-columns:1.55fr 1fr}
+  .panel--pools{grid-column:1/-1}
+}
+.panel{background:var(--base-900); padding:22px 20px}
+.panel__h{display:flex; align-items:center; gap:10px; margin-bottom:16px}
+.panel__h h3{font-family:var(--font-display); font-stretch:75%; font-size:13px;
+             letter-spacing:.1em; text-transform:uppercase; color:var(--ink-100)}
+.panel__h .tag{margin-left:auto; font-family:var(--font-mono); font-size:10px;
+               letter-spacing:.1em; color:var(--ink-400)}
+.quote{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.quote__v{font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+          font-size:clamp(34px,7vw,56px); line-height:1; color:var(--ink-100); letter-spacing:-.01em}
+.quote__age{font-family:var(--font-mono); font-size:13px; color:var(--shut-400)}
+.kv{display:grid; gap:0; margin-top:18px; border-top:1px solid var(--base-800)}
+.kv div{display:flex; align-items:center; justify-content:space-between; gap:16px;
+        padding:11px 0; border-bottom:1px solid var(--base-800)}
+.kv dt{font-size:12px; color:var(--ink-400)}
+.kv dd{margin:0; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+       font-size:13px; color:var(--ink-100); text-align:right}
+.kv dd.is-shut{color:var(--shut-400)}
+.pool{display:grid; gap:1px; background:var(--base-800); margin-top:2px}
+.pool__r{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
+         background:var(--base-900); padding:12px 0}
+.pool__n{font-family:var(--font-mono); font-size:13px; color:var(--ink-100)}
+.pool__n span{color:var(--ink-400)}
+.pool__b{display:flex; align-items:center; gap:10px; min-width:170px}
+.pool__b .bar{min-width:100px}
+.pool__p{font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+         font-size:13px; color:var(--shut-400); width:46px; text-align:right}
+
+/* ═══ MONITOR + STATES ════════════════════════════════════════════════════ */
+.seg{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px}
+.seg button{
+  min-height:44px; padding:0 14px; background:var(--base-900); color:var(--ink-400);
+  border:1px solid var(--base-700); border-radius:var(--radius-control);
+  font-family:var(--font-sans); font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; cursor:pointer;
+  transition:background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+}
+.seg button:hover{color:var(--ink-100); border-color:var(--base-600)}
+.seg button[aria-pressed="true"]{background:rgba(242,180,85,.10); color:var(--shut-400);
+                                 border-color:rgba(242,180,85,.45)}
+.mon{border:1px solid var(--base-700); border-radius:var(--radius-card);
+     background:var(--base-900); overflow:hidden}
+.mon__top{display:flex; align-items:center; gap:10px; padding:14px 18px;
+          border-bottom:1px solid var(--base-800); background:var(--base-850)}
+.mon__top .t-micro{color:var(--ink-400)}
+.mon__top .stamp{margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--ink-400)}
+.mon__body{padding:22px 18px}
+.state[hidden]{display:none}
+
+.posn{display:grid; gap:18px}
+.posn__row{display:grid; gap:14px}
+@media (min-width:760px){.posn__row{grid-template-columns:repeat(3,1fr)}}
+.stat{border:1px solid var(--base-800); border-radius:var(--radius-control);
+      background:var(--base-850); padding:16px}
+.stat dt{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-400)}
+.stat dd{margin:6px 0 0; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+         font-size:26px; line-height:1; color:var(--ink-100)}
+.stat dd.is-shut{color:var(--shut-400)}
+.posn__act{display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+           border-top:1px solid var(--base-800); padding-top:18px}
+.posn__act p{font-size:12px; color:var(--ink-400); max-width:44ch}
+
+/* skeleton shaped like the week grid */
+.sk{display:grid; gap:14px}
+.sk__grid{display:grid; grid-template-columns:repeat(24,minmax(0,1fr));
+          grid-template-rows:repeat(7,10px); gap:2px}
+.sk__c{background:var(--base-850); border-radius:1px}
+.sk__c.d{background:var(--base-800)}
+.sk__line{height:12px; border-radius:3px; background:var(--base-850)}
+.sk__line.w60{width:60%} .sk__line.w40{width:40%} .sk__line.w28{width:28%}
+.sk__rows{display:grid; gap:10px; max-width:520px}
+.prog{height:2px; background:var(--base-800); border-radius:2px; overflow:hidden}
+.prog i{display:block; height:100%; width:100%; background:var(--shut-400);
+        transform:scaleX(0); transform-origin:left;
+        transition:transform 300ms var(--ease)}
+.sk__cap{display:flex; align-items:center; gap:10px; font-family:var(--font-mono);
+         font-size:11px; color:var(--ink-400)}
+
+.empty,.errbox{display:flex; flex-direction:column; gap:12px; align-items:flex-start;
+               max-width:56ch; padding:10px 0}
+.empty h4,.errbox h4{font-family:var(--font-display); font-stretch:75%; font-size:15px;
+                     letter-spacing:.08em; text-transform:uppercase; color:var(--ink-100)}
+.errbox{border-left:2px solid var(--danger-400); padding-left:16px}
+.errbox code{font-family:var(--font-mono); font-size:12px; color:var(--danger-400);
+             background:var(--danger-900); border-radius:4px; padding:2px 6px}
+
+/* ═══ FOOTER ══════════════════════════════════════════════════════════════ */
+.ftr{border-top:1px solid var(--base-800); padding:0 var(--gutter); background:var(--base-900)}
+.ftr__in{max-width:1320px; margin:0 auto; padding:40px 0 56px; display:grid; gap:26px}
+@media (min-width:860px){.ftr__in{grid-template-columns:1.4fr 1fr 1fr}}
+.ftr h4{font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+        color:var(--ink-400); margin-bottom:10px}
+.ftr p:not(.ftr__dna){font-size:13px; line-height:1.65; color:var(--ink-400); max-width:52ch}
+.ftr .cite{color:var(--ink-300)}
+.ftr__dna{font-family:var(--font-mono); font-size:11px; color:var(--ink-400); letter-spacing:.1em}
+.ftr__dna b{color:var(--shut-400); font-weight:400}
+
+/* ═══ MOTION ══════════════════════════════════════════════════════════════ */
+/* The reveal is opt-in: without JS (or before it runs) every section is
+   already visible. Content is never hidden behind an observer. */
+.js .rise{opacity:0; transform:translateY(8px);
+          transition:opacity 260ms var(--ease), transform 260ms var(--ease)}
+.js .rise.is-in{opacity:1; transform:translateY(0)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    transition-duration:.01ms !important; animation-duration:.01ms !important;
+    animation-iteration-count:1 !important; scroll-behavior:auto !important;
+  }
+  .rise{opacity:1; transform:none}
+  .rail{transition:none}
+}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════════════ */
+@media (max-width:900px){
+  .rail{padding:0 calc(var(--gutter) + 104px) 0 calc(var(--gutter) + 92px)}
+  .rail__meta{display:none}
+}
+@media (max-width:760px){
+  :root{--rail:26px; --gutter:14px}
+  .hero{padding-top:52px}
+  /* the grid keeps filling the viewport here: capping it with max-height left the
+     rows without a definite height, so they collapsed and opened a dead void */
+  .ruler span:nth-child(even){visibility:hidden}
+  .hero__foot{display:grid; grid-template-columns:1fr 1fr; gap:16px 14px; align-items:start}
+  .hero__note{margin-left:0; max-width:none; grid-column:1/-1}
+  .hero__div{display:none}
+  .wrap{padding:40px 0}
+  .clock__in{padding:32px 0}
+
+  /* responsive table: rows become label/value stacks, no horizontal scroll */
+  .tbl caption{display:block; width:auto}
+  .tbl thead{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
+  .tbl,.tbl tbody,.tbl tr,.tbl th,.tbl td{display:block; width:auto}
+  .tbl tr{border:1px solid var(--base-800); border-radius:var(--radius-control);
+          padding:6px 12px 10px; margin-bottom:10px}
+  .tbl th,.tbl td{border-bottom:1px solid var(--base-800); padding:9px 0; text-align:left}
+  .tbl tr :last-child{border-bottom:0}
+  .tbl td{display:flex; align-items:center; justify-content:space-between; gap:16px}
+  .tbl td::before{content:attr(data-l); font-family:var(--font-sans); font-size:11px;
+                  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-500)}
+  .tbl td.barcell{width:auto; padding-right:0}
+  .tbl th:first-child,.tbl td:first-child{padding-left:0}
+  .sk__grid{grid-template-rows:repeat(7,8px)}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the week</a>
+
+<!-- hidden nav: trigger only at rest -->
+<button class="trigger" id="navTrigger" aria-expanded="false" aria-controls="navPanel">
+  <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Index
+</button>
+
+<div class="dna" title="Full-bleed · Hidden nav · Full-viewport hero · Duotone · Mixed type">
+  <span class="dot dot--shut" aria-hidden="true"></span><b>DNA-F-H-F-D-X</b>
+</div>
+
+<!-- scroll-revealed instrument rail: carries the clock once the hero leaves -->
+<div class="rail" id="rail" aria-hidden="true">
+  <span class="rail__clock num" id="railClock">--:--:--</span>
+  <span class="rail__sep" aria-hidden="true"></span>
+  <span class="rail__state"><span class="dot dot--shut" id="railDot"></span><span id="railState">Market closed</span></span>
+  <span class="rail__meta num" id="railMeta">32.5 / 168 h priced</span>
+</div>
+
+<!-- hidden nav: overlay -->
+<div class="nav" id="navPanel" hidden>
+  <div class="nav__scrim" id="navScrim" aria-hidden="true"></div>
+  <div class="nav__inner">
+    <div class="nav__top">
+      <span class="t-micro" style="color:var(--ink-500)">Closing Bell — index</span>
+      <button class="btn" id="navClose" aria-label="Close index">Close</button>
+    </div>
+    <nav class="nav__list" aria-label="Sections">
+      <a class="nav__item" href="#week"><span class="nav__idx num">01</span><span class="disp">The dark week</span><span class="nav__fig">135.5 h unpriced</span></a>
+      <a class="nav__item" href="#clock"><span class="nav__idx num">02</span><span class="disp">Time to next price</span><span class="nav__fig" id="navFig2">41:00:00</span></a>
+      <a class="nav__item" href="#evidence"><span class="nav__idx num">03</span><span class="disp">What trades in the dark</span><span class="nav__fig">70.9%</span></a>
+      <a class="nav__item" href="#sessions"><span class="nav__idx num">04</span><span class="disp">Volatility by session</span><span class="nav__fig">0.689%/hr</span></a>
+      <a class="nav__item" href="#monitor"><span class="nav__idx num">05</span><span class="disp">Position monitor</span><span class="nav__fig">2,777 exposed</span></a>
+    </nav>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ════ 01 · THE WEEK (full-viewport, full-bleed) ════════════════════════ -->
+<section class="hero" id="week" aria-labelledby="weekTitle">
+  <h1 id="weekTitle" class="vh">Closing Bell — 168 hours a week on Solana, 32.5 of them priced</h1>
+
+  <div class="hero__head">
+    <p class="hero__eyebrow">Closing Bell · <b>one cell = one hour</b> · UTC · week beginning Monday</p>
+    <div class="hero__legend">
+      <span class="lg"><span class="lg__sw lg__sw--open" aria-hidden="true"></span>Priced <span class="num" style="color:var(--open-400)">32.5</span></span>
+      <span class="lg"><span class="lg__sw lg__sw--shut" aria-hidden="true"></span>Unpriced <span class="num" style="color:var(--ink-300)">135.5</span></span>
+      <span class="lg"><span class="lg__sw lg__sw--now" aria-hidden="true"></span>Now</span>
+    </div>
+  </div>
+
+  <div class="week">
+    <div class="week__ruler">
+      <span aria-hidden="true"></span>
+      <div class="ruler" id="ruler" aria-hidden="true"></div>
+    </div>
+    <div class="week__body">
+      <div class="days" id="days" aria-hidden="true"></div>
+      <div class="grid" id="grid" role="img"
+           aria-label="A grid of 168 cells, one per hour of the week. 32.5 cells are lit, marking the hours in which the US equity market prices the underlying: weekdays 13:30 to 20:00 UTC. The remaining 135.5 cells are dark. Saturday and Sunday contain no lit cells at all."></div>
+    </div>
+  </div>
+  <noscript><p class="foot-note" style="padding:12px 0">The week grid is drawn from your clock in UTC and needs JavaScript. The figures below are static and complete without it.</p></noscript>
+
+  <dl class="hero__foot">
+    <div class="hero__stat"><dt>Market state</dt><dd id="stateVal" class="is-shut">Closed</dd></div>
+    <span class="hero__div" aria-hidden="true"></span>
+    <div class="hero__stat"><dt>Now (UTC)</dt><dd id="nowVal">--:-- Sat</dd></div>
+    <span class="hero__div" aria-hidden="true"></span>
+    <div class="hero__stat"><dt>Priced per week</dt><dd class="is-open">32.5 h</dd></div>
+    <span class="hero__div" aria-hidden="true"></span>
+    <div class="hero__stat"><dt>Traded per week</dt><dd>168 h</dd></div>
+    <p class="hero__note">Regular session 13:30–20:00 UTC, weekdays. The half-lit column is 13:00–14:00, priced only from the half hour.</p>
+  </dl>
+</section>
+
+<!-- ════ 02 · THE COUNTDOWN ═══════════════════════════════════════════════ -->
+<section class="clock" id="clock" aria-labelledby="clockTitle">
+  <div class="clock__in">
+    <h2 id="clockTitle" class="clock__lab"><span class="dot dot--shut" aria-hidden="true"></span>Time until the underlying has a price again</h2>
+    <output class="clock__big num" id="bigClock" aria-live="off">41:00:00</output>
+    <p class="clock__unit" aria-hidden="true">hours : minutes : seconds</p>
+    <p class="vh" id="clockSr" aria-live="polite" aria-atomic="true"></p>
+
+    <dl class="clock__row">
+      <div class="clock__cap"><dt>Next print</dt><dd id="nextOpen">Mon 13:30 UTC</dd></div>
+      <div class="clock__cap"><dt>At capture</dt><dd>41:00:00</dd></div>
+      <div class="clock__cap"><dt>Creation / redemption</dt><dd style="color:var(--shut-400)">Off</dd></div>
+      <div class="clock__cap"><dt>Positions inside the window</dt><dd>2,777</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ════ 03 · THE WORDS CONFIRM ═══════════════════════════════════════════ -->
+<section class="band rise" id="evidence" aria-labelledby="evTitle">
+  <div class="wrap">
+    <div class="mark">
+      <span class="mark__n">03</span>
+      <h2 class="mark__t disp" id="evTitle">What trades while nobody can price it</h2>
+    </div>
+
+    <div class="args">
+      <div class="arg">
+        <p class="arg__k">70.9<small>%</small></p>
+        <p>of xStocks DEX volume arrives outside the US regular session. Of the total, <span class="num">36.3%</span> arrives while the market is fully closed — no quote, no print, no reference.</p>
+      </div>
+      <div class="arg">
+        <p class="arg__k"><span style="color:var(--ink-100)">$</span>762.96</p>
+        <p>Pyth <code>Equity.US.SPY/USD</code> last published <span class="num" style="color:var(--shut-400)">19 hours ago</span>. The number is not wrong. It is simply the last one, and it will not move until Monday 13:30 UTC.</p>
+      </div>
+      <div class="arg">
+        <p class="arg__k">0</p>
+        <p>The issuer sets <code>maxOrderFiatValue: 0</code> while the market is shut. Creation and redemption are off, so the arbitrage that normally pins the token to the share cannot run.</p>
+      </div>
+      <div class="arg">
+        <p class="arg__k">2,777</p>
+        <p>Raydium CLMM positions across <span class="num">76</span> pools, holding <span class="num">$16.2M</span>, are inside that window right now. None of them chose the hours.</p>
+      </div>
+      <div class="arg arg--wide">
+        <p class="arg__k">0.689<small>% per hour, weekend</small></p>
+        <p class="t-lede" style="color:var(--ink-100)">Volatility does not keep market hours. The weekend moves these assets <em>harder</em> than the session does — <span class="num">0.689%</span> an hour against <span class="num">0.570%</span> — with no issuer, no oracle and no arbitrage on the other side of the trade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ 04 · SESSIONS ════════════════════════════════════════════════════ -->
+<section class="band rise" id="sessions" aria-labelledby="sessTitle">
+  <div class="wrap">
+    <div class="mark">
+      <span class="mark__n">04</span>
+      <h2 class="mark__t disp" id="sessTitle">Volatility by session</h2>
+    </div>
+
+    <table class="tbl">
+      <caption>Mean absolute hourly move and DEX volume, 672-hour sample</caption>
+      <thead>
+        <tr>
+          <th scope="col">Session</th>
+          <th scope="col">Hours in sample</th>
+          <th scope="col">Volume</th>
+          <th scope="col">Share</th>
+          <th scope="col">Mean move / hr</th>
+          <th scope="col"><span class="vh">Move, to scale</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row"><span class="sess"><span class="dot dot--open" aria-hidden="true"></span>Market</span></th>
+          <td data-l="Hours">120</td>
+          <td data-l="Volume">$19.1M</td>
+          <td data-l="Share">29.1%</td>
+          <td data-l="Mean move / hr" class="mv">0.570%</td>
+          <td data-l="Scale" class="barcell"><span class="bar" aria-hidden="true"><i style="--w:82.7%"></i></span></td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="sess"><span class="dot dot--idle" aria-hidden="true"></span>Extended</span></th>
+          <td data-l="Hours">203</td>
+          <td data-l="Volume">$22.7M</td>
+          <td data-l="Share">34.6%</td>
+          <td data-l="Mean move / hr" class="mv">0.533%</td>
+          <td data-l="Scale" class="barcell"><span class="bar" aria-hidden="true"><i style="--w:77.4%"></i></span></td>
+        </tr>
+        <tr>
+          <th scope="row"><span class="sess"><span class="dot dot--idle" aria-hidden="true"></span>Overnight</span></th>
+          <td data-l="Hours">159</td>
+          <td data-l="Volume">$11.3M</td>
+          <td data-l="Share">17.2%</td>
+          <td data-l="Mean move / hr" class="mv">0.575%</td>
+          <td data-l="Scale" class="barcell"><span class="bar" aria-hidden="true"><i style="--w:83.5%"></i></span></td>
+        </tr>
+        <tr class="is-peak">
+          <th scope="row"><span class="sess"><span class="dot dot--shut" aria-hidden="true"></span>Weekend</span></th>
+          <td data-l="Hours">190</td>
+          <td data-l="Volume">$12.6M</td>
+          <td data-l="Share">19.1%</td>
+          <td data-l="Mean move / hr" class="mv">0.689%</td>
+          <td data-l="Scale" class="barcell"><span class="bar" aria-hidden="true"><i style="--w:100%"></i></span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="foot-note">Bars are drawn to the largest value in the column. The weekend row is the finding: the least priced session is also the most volatile one.</p>
+
+    <div class="ko">
+      <div class="ko__c">
+        <span class="ko__lab">KOx · weekend</span>
+        <span class="ko__v num ko__v--w">1.071%<span style="font-size:13px; color:var(--ink-400)"> / hr</span></span>
+      </div>
+      <div class="ko__c">
+        <span class="ko__lab">KOx · market hours</span>
+        <span class="ko__v num ko__v--m">0.821%<span style="font-size:13px; color:var(--ink-400)"> / hr</span></span>
+      </div>
+      <div class="ko__c ko__c--say">
+        <p>Coca-Cola cannot move on a Saturday. KOx moves <span class="num" style="color:var(--shut-400)">30%</span> harder than it does on a Tuesday.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ 04b · THE FEED ═══════════════════════════════════════════════════ -->
+<section class="band rise" aria-labelledby="feedTitle">
+  <div class="wrap">
+    <div class="mark">
+      <span class="mark__n">04b</span>
+      <h2 class="mark__t disp" id="feedTitle">What the position is priced against</h2>
+    </div>
+
+    <div class="feed">
+      <div class="panel">
+        <div class="panel__h">
+          <span class="dot dot--shut" aria-hidden="true"></span>
+          <h3>Pyth · Equity.US.SPY/USD</h3>
+          <span class="tag">frozen</span>
+        </div>
+        <p class="quote">
+          <span class="quote__v num">$762.96</span>
+          <span class="quote__age num">published 19 h ago</span>
+        </p>
+        <dl class="kv">
+          <div><dt>Next publish</dt><dd class="is-shut" id="nextPub">Mon 13:30 UTC</dd></div>
+          <div><dt>Movement since publish</dt><dd>0.00%</dd></div>
+          <div><dt>Hours the feed will hold this value</dt><dd class="is-shut" id="holdHours">41</dd></div>
+        </dl>
+      </div>
+
+      <div class="panel">
+        <div class="panel__h">
+          <span class="dot dot--shut" aria-hidden="true"></span>
+          <h3>Issuer</h3>
+          <span class="tag">gate closed</span>
+        </div>
+        <dl class="kv" style="margin-top:2px">
+          <div><dt>maxOrderFiatValue</dt><dd class="is-shut">0</dd></div>
+          <div><dt>Creation</dt><dd class="is-shut">Off</dd></div>
+          <div><dt>Redemption</dt><dd class="is-shut">Off</dd></div>
+          <div><dt>Arbitrage path to NAV</dt><dd class="is-shut">None</dd></div>
+        </dl>
+      </div>
+
+      <div class="panel panel--pools">
+        <div class="panel__h">
+          <span class="dot dot--idle" aria-hidden="true"></span>
+          <h3>Where SPYx liquidity actually sits</h3>
+          <span class="tag">Raydium CLMM · 76 pools</span>
+        </div>
+        <div class="pool">
+          <div class="pool__r">
+            <span class="pool__n">STONK / SPYx <span>· memecoin pair</span></span>
+            <span class="pool__b">
+              <span class="bar" aria-hidden="true"><i style="--w:51%"></i></span>
+              <span class="pool__p">51%</span>
+            </span>
+          </div>
+          <div class="pool__r"><span class="pool__n">MCDx / FRIES</span><span class="pool__b"><span class="pool__p" style="color:var(--ink-400); width:auto">share not measured</span></span></div>
+          <div class="pool__r"><span class="pool__n">KOx / COKE</span><span class="pool__b"><span class="pool__p" style="color:var(--ink-400); width:auto">share not measured</span></span></div>
+          <div class="pool__r"><span class="pool__n">AAPLx / TREE</span><span class="pool__b"><span class="pool__p" style="color:var(--ink-400); width:auto">share not measured</span></span></div>
+        </div>
+        <p class="foot-note">The deepest venue for a tokenized S&amp;P 500 share is a memecoin pair. Through the weekend it prices itself.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ 05 · POSITION MONITOR + ALL STATES ═══════════════════════════════ -->
+<section class="band rise" id="monitor" aria-labelledby="monTitle">
+  <div class="wrap">
+    <div class="mark">
+      <span class="mark__n">05</span>
+      <h2 class="mark__t disp" id="monTitle">Position monitor</h2>
+    </div>
+
+    <div class="seg" role="group" aria-label="Monitor state, for review">
+      <button type="button" data-state="data" aria-pressed="true">Data</button>
+      <button type="button" data-state="loading" aria-pressed="false">Loading</button>
+      <button type="button" data-state="empty" aria-pressed="false">Empty</button>
+      <button type="button" data-state="error" aria-pressed="false">Error</button>
+    </div>
+
+    <div class="mon">
+      <div class="mon__top">
+        <span class="dot dot--shut" id="monDot" aria-hidden="true"></span>
+        <span class="t-micro" id="monLabel">Exposure · market closed</span>
+        <span class="stamp num" id="monStamp">read --:--:-- UTC</span>
+      </div>
+      <div class="mon__body">
+
+        <!-- DATA -->
+        <div class="state" id="st-data">
+          <div class="posn">
+            <dl class="posn__row">
+              <div class="stat"><dt>Positions exposed</dt><dd>2,777</dd></div>
+              <div class="stat"><dt>Liquidity in the window</dt><dd>$16.2M</dd></div>
+              <div class="stat"><dt>Unpriced hours ahead</dt><dd class="is-shut" id="aheadVal">41</dd></div>
+            </dl>
+            <div class="posn__act">
+              <button class="btn btn--primary" type="button">Prepare exit</button>
+              <button class="btn" type="button">Arm warning for next close</button>
+              <p>The exit is built, simulated and handed to you. You sign it. Closing Bell never holds a key and never moves a position on your behalf.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOADING: skeleton shaped like the week grid -->
+        <div class="state" id="st-loading" hidden>
+          <div class="sk">
+            <div class="sk__grid" id="skGrid" aria-hidden="true"></div>
+            <div class="sk__rows" aria-hidden="true">
+              <span class="sk__line w60"></span>
+              <span class="sk__line w40"></span>
+              <span class="sk__line w28"></span>
+            </div>
+            <div class="prog" aria-hidden="true"><i id="progBar"></i></div>
+            <p class="sk__cap" role="status"><span class="dot dot--idle" aria-hidden="true"></span><span id="progText">Reading pool 0 of 76</span></p>
+          </div>
+        </div>
+
+        <!-- EMPTY -->
+        <div class="state" id="st-empty" hidden>
+          <div class="empty">
+            <h4>No concentrated-liquidity positions</h4>
+            <p>This wallet holds no Raydium CLMM position in a tokenized-equity pool, so there is nothing to exit. The window still closes on schedule.</p>
+            <p style="color:var(--ink-400)">Watch it anyway and you will be warned before the next close, whether or not you are in the pool by then.</p>
+            <button class="btn" type="button">Watch the next close</button>
+          </div>
+        </div>
+
+        <!-- ERROR -->
+        <div class="state" id="st-error" hidden>
+          <div class="errbox">
+            <h4 style="color:var(--danger-400)">Could not read your positions</h4>
+            <p>The Solana RPC did not answer within 8 seconds, so the position count below the fold is unknown rather than zero. Nothing was signed and nothing changed.</p>
+            <p><code>RPC_READ_TIMEOUT · helius · 8000ms</code></p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+              <button class="btn" type="button">Retry read</button>
+              <span class="num" style="font-size:11px; color:var(--ink-400)">last good read 03:12:44 UTC</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="ftr">
+  <div class="ftr__in">
+    <div>
+      <h4>Provenance</h4>
+      <p>Every figure on this page is measured. Session statistics come from a 672-hour sample of xStocks DEX activity; the oracle quote, the issuer gate and the position count are on-chain reads; the countdown, the market state and the current-hour ring are computed from your clock in UTC. Nothing here is illustrative.</p>
+    </div>
+    <div>
+      <h4>Drawn after</h4>
+      <p class="cite"><strong>Our World in Data</strong> — information density that respects the reader: show the whole distribution, label it honestly, let the picture carry the argument.</p>
+      <p class="cite" style="margin-top:10px"><strong>Bloomberg Terminal</strong> — dark, monospaced and unapologetically dense, because a surface you trust with a position should not look like it is selling you one.</p>
+    </div>
+    <div>
+      <h4>Genome</h4>
+      <p class="ftr__dna"><b>DNA-F-H-F-D-X</b></p>
+      <p style="margin-top:10px">Full-bleed · Hidden nav · Full-viewport hero · Duotone · Mixed typography. Two hues carry the whole page — amber for unpriced, green for priced — and the third appears only when something fails.</p>
+      <p style="margin-top:10px; color:var(--ink-400)">Proposal 1 of 3 · The Dark Week</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function (id) { return document.getElementById(id); };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  /* ── session model ─────────────────────────────────────────────────────
+     Regular session: 13:30–20:00 UTC, Monday to Friday. 6.5 h x 5 = 32.5 h. */
+  function bounds(d) {
+    var y = d.getUTCFullYear(), m = d.getUTCMonth(), dd = d.getUTCDate();
+    return { open: Date.UTC(y, m, dd, 13, 30, 0), close: Date.UTC(y, m, dd, 20, 0, 0) };
+  }
+  function weekday(dow) { return dow >= 1 && dow <= 5; }
+  function isOpen(now) {
+    if (!weekday(now.getUTCDay())) return false;
+    var b = bounds(now), t = now.getTime();
+    return t >= b.open && t < b.close;
+  }
+  function nextOpen(now) {
+    var t = now.getTime(), d = new Date(t);
+    for (var i = 0; i < 14; i++) {
+      var b = bounds(d);
+      if (weekday(d.getUTCDay()) && t < b.open) return new Date(b.open);
+      d.setUTCDate(d.getUTCDate() + 1);
+      d.setUTCHours(0, 0, 0, 0);
+    }
+    return new Date(t);
+  }
+  function stamp(d) {
+    return DAYS[(d.getUTCDay() + 6) % 7] + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC';
+  }
+  function hms(ms) {
+    if (ms < 0) ms = 0;
+    var s = Math.floor(ms / 1000);
+    return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+  }
+
+  /* ── the week grid: 168 cells, one per hour ───────────────────────────── */
+  var ruler = $('ruler'), days = $('days'), grid = $('grid'), cells = [];
+  if (ruler && days && grid) {
+    var frag = document.createDocumentFragment(), i, r, h, el;
+    for (h = 0; h < 24; h++) { el = document.createElement('span'); el.textContent = pad(h); frag.appendChild(el); }
+    ruler.appendChild(frag);
+
+    frag = document.createDocumentFragment();
+    for (r = 0; r < 7; r++) {
+      el = document.createElement('span');
+      el.className = 'day' + (r > 4 ? ' day--wknd' : '');
+      el.innerHTML = '<i></i>' + DAYS[r].toUpperCase();
+      frag.appendChild(el);
+    }
+    days.appendChild(frag);
+
+    frag = document.createDocumentFragment();
+    for (r = 0; r < 7; r++) {
+      for (h = 0; h < 24; h++) {
+        el = document.createElement('span');
+        el.className = 'cell';
+        if (r <= 4 && h >= 14 && h <= 19) { el.setAttribute('data-s', 'open'); }
+        else if (r <= 4 && h === 13) { el.setAttribute('data-s', 'half'); el.appendChild(document.createElement('i')); }
+        cells.push(el);
+        frag.appendChild(el);
+      }
+    }
+    grid.appendChild(frag);
+  }
+
+  /* ── skeleton grid: same shape as the content it replaces ─────────────── */
+  var skGrid = $('skGrid');
+  if (skGrid) {
+    var sfrag = document.createDocumentFragment();
+    for (var sr = 0; sr < 7; sr++) {
+      for (var sh = 0; sh < 24; sh++) {
+        var sc = document.createElement('span');
+        sc.className = 'sk__c' + (sr <= 4 && sh >= 13 && sh <= 19 ? ' d' : '');
+        sfrag.appendChild(sc);
+      }
+    }
+    skGrid.appendChild(sfrag);
+  }
+
+  /* ── the instrument: live state, live countdown ───────────────────────── */
+  var marked = null, lastCoarse = -1;
+  function tick() {
+    var now = new Date(), open = isOpen(now);
+    var target = open ? new Date(bounds(now).close) : nextOpen(now);
+    var left = target.getTime() - now.getTime();
+
+    var idx = ((now.getUTCDay() + 6) % 7) * 24 + now.getUTCHours();
+    if (cells.length && marked !== idx) {
+      if (marked !== null && cells[marked]) cells[marked].classList.remove('is-now');
+      if (cells[idx]) cells[idx].classList.add('is-now');
+      marked = idx;
+    }
+
+    var big = $('bigClock'); if (big) { big.textContent = hms(left); big.style.color = open ? 'var(--open-400)' : 'var(--shut-400)'; }
+    var rc = $('railClock'); if (rc) { rc.textContent = hms(left); rc.style.color = open ? 'var(--open-400)' : 'var(--shut-400)'; }
+    var nf = $('navFig2'); if (nf) nf.textContent = hms(left);
+
+    var lab = $('clockTitle');
+    if (lab) lab.lastChild.textContent = open ? 'Time until the price stops' : 'Time until the underlying has a price again';
+    var labDot = lab ? lab.querySelector('.dot') : null;
+    if (labDot) labDot.className = 'dot ' + (open ? 'dot--open' : 'dot--shut');
+
+    var sv = $('stateVal'); if (sv) { sv.textContent = open ? 'Open' : 'Closed'; sv.className = open ? 'is-open' : 'is-shut'; }
+    var rs = $('railState'); if (rs) rs.textContent = open ? 'Market open' : 'Market closed';
+    var rd = $('railDot'); if (rd) rd.className = 'dot ' + (open ? 'dot--open' : 'dot--shut');
+    var nv = $('nowVal'); if (nv) nv.textContent = pad(now.getUTCHours()) + ':' + pad(now.getUTCMinutes()) + ' ' + DAYS[(now.getUTCDay() + 6) % 7];
+
+    var no = nextOpen(now), lbl = open ? stamp(new Date(bounds(now).close)) : stamp(no);
+    var nOpen = $('nextOpen'); if (nOpen) nOpen.textContent = lbl;
+    var nPub = $('nextPub'); if (nPub) nPub.textContent = stamp(no);
+    var hrs = String(Math.max(0, Math.floor((no.getTime() - now.getTime()) / 3600000)));
+    var hh = $('holdHours'); if (hh) hh.textContent = hrs;
+    var ah = $('aheadVal'); if (ah) ah.textContent = hrs;
+    var ms2 = $('monStamp'); if (ms2) ms2.textContent = 'read ' + pad(now.getUTCHours()) + ':' + pad(now.getUTCMinutes()) + ':' + pad(now.getUTCSeconds()) + ' UTC';
+    var md = $('monDot'), ml = $('monLabel');
+    /* a non-default state owns the header; the clock must not overwrite it */
+    if (md && !md.dataset.locked) {
+      md.className = 'dot ' + (open ? 'dot--open' : 'dot--shut');
+      if (ml) ml.textContent = open ? 'Exposure · market open' : 'Exposure · market closed';
+    }
+
+    /* coarse, once a minute, so a screen reader is informed but not flooded */
+    var coarse = Math.floor(left / 60000);
+    var sr2 = $('clockSr');
+    if (sr2 && coarse !== lastCoarse) {
+      lastCoarse = coarse;
+      if (coarse % 10 === 0) {
+        sr2.textContent = (open ? 'Priced for another ' : 'Unpriced for another ') +
+          Math.floor(left / 3600000) + ' hours and ' + Math.floor(left % 3600000 / 60000) + ' minutes.';
+      }
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  /* ── hidden nav ────────────────────────────────────────────────────────── */
+  var panel = $('navPanel'), trig = $('navTrigger'), closeBtn = $('navClose'), scrim = $('navScrim'), prev = null;
+  function openNav() {
+    prev = document.activeElement;
+    panel.hidden = false;
+    trig.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('is-locked');
+    if (closeBtn) closeBtn.focus();
+  }
+  function closeNav() {
+    panel.hidden = true;
+    trig.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('is-locked');
+    if (prev && prev.focus) prev.focus();
+  }
+  if (trig) trig.addEventListener('click', function () { panel.hidden ? openNav() : closeNav(); });
+  if (closeBtn) closeBtn.addEventListener('click', closeNav);
+  if (scrim) scrim.addEventListener('click', closeNav);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && panel && !panel.hidden) { closeNav(); return; }
+    if (e.key !== 'Tab' || !panel || panel.hidden) return;
+    var f = panel.querySelectorAll('a[href], button:not([disabled])');
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  if (panel) {
+    panel.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.nav__item')) closeNav();
+    });
+  }
+
+  /* ── revealed rail + section rise (transform / opacity only) ──────────── */
+  var hero = $('week'), rail = $('rail');
+  if ('IntersectionObserver' in window && hero && rail) {
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        rail.classList.toggle('is-shown', !en.isIntersecting);
+        rail.setAttribute('aria-hidden', en.isIntersecting ? 'true' : 'false');
+      });
+    }, { rootMargin: '-72px 0px 0px 0px' }).observe(hero);
+  }
+  var rises = document.querySelectorAll('.rise');
+  function revealAll() { Array.prototype.forEach.call(rises, function (n) { n.classList.add('is-in'); }); }
+  if ('IntersectionObserver' in window && !reduced) {
+    var fired = false;
+    var io = new IntersectionObserver(function (entries) {
+      fired = true;
+      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } });
+    }, { rootMargin: '0px 0px -12% 0px' });
+    Array.prototype.forEach.call(rises, function (n) { io.observe(n); });
+    /* safety net: if the observer never reports, show everything rather than
+       leave a section invisible. Content outranks the effect. */
+    setTimeout(function () { if (!fired) revealAll(); }, 1200);
+  } else {
+    revealAll();
+  }
+
+  /* ── monitor states ────────────────────────────────────────────────────── */
+  var seg = document.querySelector('.seg'), progTimer = null;
+  function runProgress() {
+    var bar = $('progBar'), txt = $('progText'), n = 0;
+    if (!bar || !txt) return;
+    clearInterval(progTimer);
+    bar.style.transform = 'scaleX(0)';
+    txt.textContent = 'Reading pool 0 of 76';
+    progTimer = setInterval(function () {
+      n += 4;
+      if (n >= 76) { n = 76; clearInterval(progTimer); }
+      bar.style.transform = 'scaleX(' + (n / 76) + ')';
+      txt.textContent = 'Reading pool ' + n + ' of 76';
+    }, 300);
+  }
+  if (seg) {
+    seg.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-state]');
+      if (!b) return;
+      var want = b.getAttribute('data-state');
+      Array.prototype.forEach.call(seg.querySelectorAll('button'), function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      ['data', 'loading', 'empty', 'error'].forEach(function (k) {
+        var node = $('st-' + k); if (node) node.hidden = (k !== want);
+      });
+      var md2 = $('monDot'), ml2 = $('monLabel');
+      if (want === 'error') {
+        md2.className = 'dot dot--danger'; md2.dataset.locked = '1';
+        ml2.textContent = 'Exposure · read failed';
+      } else if (want === 'loading') {
+        md2.className = 'dot dot--idle'; md2.dataset.locked = '1';
+        ml2.textContent = 'Exposure · reading';
+        runProgress();
+      } else if (want === 'empty') {
+        md2.className = 'dot dot--idle'; md2.dataset.locked = '1';
+        ml2.textContent = 'Exposure · nothing held';
+      } else {
+        delete md2.dataset.locked;
+        clearInterval(progTimer);
+      }
+      tick();
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -2,37 +2,37 @@
 
 /* ---------------------------------------------------------------------------
    Closing Bell tokens.
-   Craft standard adopted from the Aval design system (dark-only, strict
-   elevation ladder, zero shadows, five type steps, two radii, colour-only
-   motion). Semantics are Closing Bell's own: the accent split is PRICED vs
-   UNPRICED, because that gap is the entire product argument.
+
+   The accent split IS the product argument:
+     shut  — an hour in which the underlying has no price and the issuer will
+             not create or redeem. The page is in this state most of the time.
+     open  — an hour in which the underlying is actually priced.
+
+   Variety comes from alpha on one hue, never from extra hues. Depth is a
+   one-pixel border or a surface step, never a shadow.
    --------------------------------------------------------------------------- */
 @theme {
-  /* Surfaces — each step lighter than the one below. Depth is a surface step
-     or a one-pixel border. Never a shadow. */
-  --color-base-950: #07080a; /* page ground */
-  --color-base-900: #0c0e12; /* surface */
-  --color-base-850: #11141a; /* raised surface, one step above */
-  --color-base-800: #171b23; /* hairlines, inner row rules */
-  --color-base-700: #222732; /* borders */
-  --color-base-600: #2f3542; /* hover borders, control borders */
+  --color-base-950: #07080a;
+  --color-base-900: #0c0e12;
+  --color-base-850: #11141a;
+  --color-base-800: #171b23;
+  --color-base-700: #222732;
+  --color-base-600: #2f3542;
 
-  /* Text — ink-500 is the dimmest permitted, and never on base-800 or a tint. */
+  /* ink-500 raised from #737988 to clear 4.5:1 on raised surfaces. */
   --color-ink-100: #ecedf1;
   --color-ink-300: #a6abb8;
-  --color-ink-500: #737988;
+  --color-ink-500: #7d8393;
 
-  /* Semantic accents. Two, and they are the argument:
-     open  = the underlying has a live price.
-     shut  = the underlying has no price and creation/redemption is disabled. */
-  --color-open-400: #3ddc97;
-  --color-open-900: #06291c;
   --color-shut-400: #f2b455;
   --color-shut-900: #2a1c06;
+  --color-open-400: #3ddc97;
+  --color-open-900: #06291c;
+  /* Desaturated green, used only to mark "still trading" against the frozen feed. */
+  --color-live-400: #63a98b;
   --color-danger-400: #f2607a;
   --color-danger-900: #2a0d15;
 
-  /* Type — five steps and a display step. No others. */
   --text-micro: 11px;
   --text-micro--line-height: 1.25;
   --text-micro--letter-spacing: 0.12em;
@@ -45,46 +45,43 @@
   --text-lede: 17px;
   --text-lede--line-height: 1.4;
   --text-lede--letter-spacing: -0.01em;
-  --text-display: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem);
-  --text-display--line-height: 1.08;
-  --text-display--letter-spacing: -0.02em;
+  --text-display: clamp(2rem, 1.3rem + 3vw, 3.5rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.025em;
 
-  /* Radii — exactly two. Use rounded-card / rounded-control, never the
-     bracket form, which is Tailwind v3 syntax and silently renders square. */
   --radius-control: 8px;
   --radius-card: 14px;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* next/font emits --font-mono; alias it so @theme can compose it. */
+:root { --font-mono-jb: var(--font-mono); --nav-h: 64px; --gutter: clamp(18px, 4vw, 56px); }
 
 html { color-scheme: dark; }
 
 body {
   background: var(--color-base-950);
   color: var(--color-ink-100);
-  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Every figure a viewer compares side by side. Without this the columns
-   fail to align and the comparison stops being checkable by eye. */
+/* Every figure a viewer compares side by side. */
 .tnum { font-variant-numeric: tabular-nums; }
 
-/* One focus ring everywhere. Focus is a property of the user, not of the
-   surface they happen to be on. */
 :where(button, input, a, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-open-400);
+  outline: 2px solid var(--color-shut-400);
   outline-offset: 2px;
   border-radius: var(--radius-control);
 }
 
-/* One keyframe, used only when a result arrives. */
 @keyframes f-rise {
-  from { opacity: 0; transform: translateY(2px); }
+  from { opacity: 0; transform: translateY(3px); }
   to   { opacity: 1; transform: none; }
 }
-.f-rise { animation: f-rise 180ms ease-out both; }
+.f-rise { animation: f-rise 260ms cubic-bezier(.22,1,.36,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -94,15 +91,10 @@ body {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Wallet adapter override.
-   @solana/wallet-adapter-react-ui ships its own button styling with a shadow,
-   a gradient and its own radius. All three are on this project's rejection
-   list, so the button is pulled onto the token system instead of shipping a
-   second visual language inside the product.
-   --------------------------------------------------------------------------- */
+/* Wallet adapter ships a shadow, a gradient and its own radius. All three are
+   on the rejection list, so it is pulled onto the token system. */
 .wallet-adapter-button {
-  height: 2.75rem !important;                    /* 44px, same as every control */
+  height: 2.75rem !important;
   border-radius: var(--radius-control) !important;
   background: var(--color-base-800) !important;
   border: 1px solid var(--color-base-600) !important;
@@ -113,10 +105,7 @@ body {
   box-shadow: none !important;
   transition: background-color 150ms ease-out !important;
 }
-.wallet-adapter-button:not([disabled]):hover {
-  background: var(--color-base-700) !important;
-}
-.wallet-adapter-button:active { transform: scale(0.99); }
+.wallet-adapter-button:not([disabled]):hover { background: var(--color-base-700) !important; }
 .wallet-adapter-modal-wrapper {
   background: var(--color-base-900) !important;
   border: 1px solid var(--color-base-700) !important;

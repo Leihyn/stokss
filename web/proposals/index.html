@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Closing Bell — 3 design proposals</title>
+<style>
+:root{--base:#07080a;--surf:#0c0e12;--raised:#11141a;--hair:#171b23;--bd:#222732;
+--ink:#ecedf1;--ink2:#a6abb8;--ink3:#7d8393;--amber:#f2b455;--green:#3ddc97;--red:#f2607a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--base);color:var(--ink);
+font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:56px 20px 80px}
+h1{font-size:clamp(1.75rem,1.2rem+2vw,2.5rem);line-height:1.1;letter-spacing:-.02em;margin:0 0 12px;font-weight:600}
+.sub{color:var(--ink2);max-width:62ch;margin:0 0 40px}
+.eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.12em;
+text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.card{border:1px solid var(--bd);border-radius:14px;background:var(--surf);overflow:hidden;margin-bottom:28px}
+.card.win{border-color:rgba(242,180,85,.45)}
+.hd{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;
+padding:18px 20px;border-bottom:1px solid var(--hair)}
+.name{font-size:17px;font-weight:600;margin:0}
+.dna{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.1em;
+color:var(--ink3);border:1px solid var(--bd);border-radius:6px;padding:3px 9px}
+.badge{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.08em;
+border-radius:4px;padding:3px 9px}
+.b-win{background:rgba(242,180,85,.12);color:var(--amber)}
+.b-ok{background:rgba(61,220,151,.1);color:var(--green)}
+.b-bad{background:rgba(242,96,122,.12);color:var(--red)}
+img{display:block;width:100%;height:auto;border-bottom:1px solid var(--hair);background:var(--base)}
+.body{padding:20px}
+.body p{margin:0 0 12px;color:var(--ink2)}
+.body p:last-child{margin:0}
+.body b{color:var(--ink);font-weight:600}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:16px 0 0;
+font-family:ui-monospace,Menlo,monospace;font-size:12px}
+dt{color:var(--ink3)}dd{margin:0;color:var(--ink2)}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+a.btn{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:8px;
+border:1px solid var(--bd);color:var(--ink);text-decoration:none;font-size:13px;
+transition:background-color 150ms ease-out}
+a.btn:hover{background:var(--hair)}
+a.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--hair);
+color:var(--ink3);font-size:12px;font-family:ui-monospace,Menlo,monospace}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+</style></head><body><div class="wrap">
+
+<p class="eyebrow">Closing Bell · design proposals · 2026-09-19</p>
+<h1>Three directions, zero shared DNA genes.</h1>
+<p class="sub">Every figure inside these proposals traces to a measurement against Solana mainnet
+or a live feed. Each was rendered in headless Chrome at desktop and 375px — none overflow.
+Screenshots below are the real render, not mockups.</p>
+
+<div class="card win">
+  <div class="hd">
+    <h2 class="name">2 · The Frozen Print</h2>
+    <div><span class="badge b-win">RECOMMENDED</span> <span class="dna">DNA-A-T-S-M-C</span></div>
+  </div>
+  <img src="proposal-2-1440.png" alt="The Frozen Print proposal rendered at 1440px">
+  <div class="body">
+    <p><b>“The feed stopped. The token didn’t.”</b> Pyth’s SPY feed terminates hard at the
+    closing bell. Two measured prints are plotted and <b>nothing is drawn between them</b>,
+    because no tick series exists for the token.</p>
+    <p>It turns that limitation into the centrepiece: the largest annotation on the chart reads
+    <b>“Nothing is drawn here because nothing was measured.”</b> It discloses its own truncated
+    y-axis and states that the horizontal scale is not truncated, and that this is the finding.</p>
+    <dl>
+      <dt>Inspiration</dt><dd>Linear + FT / Economist charting</dd>
+      <dt>Verified</dt><dd>rendered at 320 / 375 / 430 / 768 / 1024 / 1280 px</dd>
+      <dt>Bugs fixed</dt><dd>4, all found by rendering rather than reading</dd>
+      <dt>QA sweep</dt><dd>clean — no gradients, shadows, blur or purple</dd>
+      <dt>Note</dt><dd>loads Archivo + JetBrains Mono (matches style.config)</dd>
+    </dl>
+    <div class="links"><a class="btn" href="proposal-2.html">Open proposal</a>
+    <a class="btn" href="proposal-2-375.png">Mobile render</a></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hd">
+    <h2 class="name">1 · The Dark Week</h2>
+    <div><span class="badge b-ok">QA PERFECT</span> <span class="dna">DNA-F-H-F-D-X</span></div>
+  </div>
+  <img src="proposal-1-1440.png" alt="The Dark Week proposal rendered at 1440px">
+  <div class="body">
+    <p>The 168-hour week is the hero, full-bleed. A small green island of 32.5 priced hours
+    floats in a field of <b>135.5 dead ones</b>, with the amber “now” cell ringed alone out in
+    Saturday night. The picture argues before a word is read.</p>
+    <p>The only file in the set with a <b>flawless mechanical sweep</b>: zero box-shadow, zero
+    blur, zero gradients, zero web fonts. Carries its mixed-typography gene using three system
+    registers instead of a network fetch.</p>
+    <dl>
+      <dt>Inspiration</dt><dd>Our World in Data + Bloomberg Terminal</dd>
+      <dt>Bugs fixed</dt><dd>4, found by rendering</dd>
+      <dt>QA sweep</dt><dd>clean on every check</dd>
+    </dl>
+    <div class="links"><a class="btn" href="proposal-1.html">Open proposal</a>
+    <a class="btn" href="proposal-1-375.png">Mobile render</a></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hd">
+    <h2 class="name">3 · The Crowd</h2>
+    <div><span class="badge b-bad">VISUAL BROKEN</span> <span class="dna">DNA-G-O-I-N-S</span></div>
+  </div>
+  <img src="proposal-3-1440.png" alt="The Crowd proposal rendered at 1440px">
+  <div class="body">
+    <p>Strong headline — <b>“2,777 positions are standing in the dark”</b> — and a genuinely
+    good countdown readout. Every mark is meant to be one real liquidity position, clustered
+    into the pool it sits in.</p>
+    <p><b>The signature visual failed.</b> The crowd collapsed into a narrow grey column that
+    collides with the countdown card, pool labels overlap into illegible mush, and half the hero
+    is empty. The crowd <i>is</i> the concept. Also carries one <code>backdrop-filter</code>,
+    which is on the hard-no list.</p>
+    <dl>
+      <dt>Inspiration</dt><dd>Stripe Dashboard + Our World in Data</dd>
+      <dt>Salvageable</dt><dd>the headline; not the visualisation</dd>
+    </dl>
+    <div class="links"><a class="btn" href="proposal-3.html">Open proposal</a>
+    <a class="btn" href="proposal-3-375.png">Mobile render</a></div>
+  </div>
+</div>
+
+<footer>
+Recommendation: build on proposal 2 as the spine and fold proposal 1’s week grid in as a section.
+Proposal 2 is the argument; proposal 1 is the picture. Neither is in the Next.js app yet.
+</footer>
+</div></body></html>

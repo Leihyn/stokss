@@ -34,20 +34,50 @@ export interface SessionState {
 
 const HOLIDAYS = new Set(["2026-09-07", "2026-11-26", "2026-12-25"]);
 
-/** Regular session is 13:30-20:00 UTC while the US is on EDT. */
+/**
+ * Is the US on Daylight Time on this date?
+ *
+ * DST runs from the second Sunday in March to the first Sunday in November, switching at
+ * 02:00 local. Day granularity is sufficient here: the transition happens hours before any
+ * session boundary we care about.
+ *
+ * This matters because the regular session is 09:30-16:00 EASTERN, not a fixed UTC window.
+ * Hardcoding 13:30-20:00 UTC is right for eight months of the year and an hour wrong for
+ * the other four, and that constant propagates into the week grid and the chart axis.
+ */
+export function isUsDst(d: Date): boolean {
+  const y = d.getUTCFullYear();
+  const march = new Date(Date.UTC(y, 2, 1));
+  const secondSunMarch = 8 + ((7 - march.getUTCDay()) % 7);
+  const nov = new Date(Date.UTC(y, 10, 1));
+  const firstSunNov = 1 + ((7 - nov.getUTCDay()) % 7);
+  const start = Date.UTC(y, 2, secondSunMarch);
+  const end = Date.UTC(y, 10, firstSunNov);
+  const t = Date.UTC(y, d.getUTCMonth(), d.getUTCDate());
+  return t >= start && t < end;
+}
+
+/** Regular session open/close in UTC minutes for the given date. */
+export function sessionBoundsUtc(d: Date): { open: number; close: number } {
+  // 09:30-16:00 Eastern. EDT = UTC-4, EST = UTC-5.
+  return isUsDst(d) ? { open: 810, close: 1200 } : { open: 870, close: 1260 };
+}
+
 export function isRegularSession(d: Date): boolean {
   const day = d.getUTCDay();
   if (day === 0 || day === 6) return false;
   if (HOLIDAYS.has(d.toISOString().slice(0, 10))) return false;
   const m = d.getUTCHours() * 60 + d.getUTCMinutes();
-  return m >= 810 && m < 1200;
+  const { open, close } = sessionBoundsUtc(d);
+  return m >= open && m < close;
 }
 
 export function nextRegularOpen(from: Date): Date {
   const d = new Date(from);
   for (let i = 0; i < 12; i++) {
     const c = new Date(d);
-    c.setUTCHours(13, 30, 0, 0);
+    const { open } = sessionBoundsUtc(d);
+    c.setUTCHours(Math.floor(open / 60), open % 60, 0, 0);
     if (c > from && c.getUTCDay() !== 0 && c.getUTCDay() !== 6 && !HOLIDAYS.has(c.toISOString().slice(0, 10))) return c;
     d.setUTCDate(d.getUTCDate() + 1);
   }

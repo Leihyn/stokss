@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run"
+    "lint": "eslint app lib components",
+    "test": "vitest run",
+    "check": "npm run lint && npm run build && npm test"
   },
   "dependencies": {
     "@raydium-io/raydium-sdk-v2": "^0.2.71-alpha",

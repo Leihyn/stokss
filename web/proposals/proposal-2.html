@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closing Bell — The Frozen Print</title>
+<meta name="description" content="Pyth's equity feed for SPY stops at the closing bell. The tokenized share keeps trading for another 41 hours. Closing Bell warns liquidity providers and hands them a one-click exit.">
+
+<!--
+================================================================================
+UX ARCHITECTURE — Closing Bell / Proposal 2 "The Frozen Print"
+DNA: A (asymmetric layout) · T (top-fixed nav) · S (split hero)
+     M (monochrome: one hue + neutrals) · C (custom/display typography)
+================================================================================
+
+ENTRY
+  1. Cold link (X, Discord, a Raydium position alert). Lands on the hero. The
+     chart is the pitch; nothing above it needs reading first.
+  2. Returning LP with a wallet already connected. Skips the argument, goes
+     straight to "Check my position" in the nav.
+  3. Deep link /position/<mint> from an alert. Renders the monitor panel first,
+     hero collapsed to a one-line banner. (Out of scope for this static page.)
+
+EXIT
+  - Primary: a signed exit transaction — the LP withdraws or narrows the range
+    before the unpriced window opens. The user signs it; we never custody.
+  - Secondary: a watch subscription — leave without acting, get warned at the
+    next bell. This is the exit for the 80% who arrive curious, not exposed.
+  - Terminal: "no exposure found" — the honest dead end, and it must feel like
+    a clean answer rather than a failure.
+
+SCREENS
+  S1  Hero / the argument      split: thesis rail + divergence chart
+  S2  The window               four measured facts about the shut hours
+  S3  Volatility inverts       closed-hours vs open-hours realised vol
+  S4  What is exposed          position, pool and liquidity counts
+  S5  Position monitor         the instrument itself, with all four states
+  S6  Provenance / footer      where every number came from
+
+HAPPY PATH
+  land on S1 → read the chart in under five seconds → scroll S2/S3 for the
+  scale of it → S4 tells them it is 2,777 positions, not a thought experiment →
+  S5 "Check my position" → connect wallet → monitor lists positions with an
+  EXPOSED marker → "Exit position" → wallet sign sheet → confirmation → offer
+  the watch subscription for next week's bell.
+
+STATES (all four rendered in S5, switchable)
+  READY    positions listed, severity as dot + label + colour, exit enabled
+  LOADING  skeleton shaped like the chart: dashed grid, blank marker slots,
+           no spinner, no shimmer — the layout does not move when data lands
+  EMPTY    wallet read succeeded, no tokenized-equity positions. Offers the
+           watch subscription instead of a retry.
+  ERROR    the Pyth price account could not be read. Names the account, keeps
+           the retry at 44px, and refuses to show a stale number as if fresh.
+
+REJECTED ALTERNATIVES
+  - A live ticking countdown. It animates forever, and second-level precision
+    on a 41-hour window implies an accuracy we do not have.
+  - A drawn DEX price path. We hold no tick series. See the chart caption.
+  - Red for the error state. One hue is the gene; states separate by fill
+    (solid / hollow / square) and by an always-present text label.
+================================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* ── tokens ─────────────────────────────────────────────────────────────── */
+:root{
+  /* neutrals — strict elevation ladder, no shadows anywhere */
+  --base:#07080a;
+  --surface:#0c0e12;
+  --raised:#11141a;
+  --hairline:#171b23;
+  --border:#222732;
+  --border-hi:#2f3542;
+
+  --ink-1:#ecedf1;
+  --ink-2:#a6abb8;
+  --ink-3:#7d8393;
+
+  /* THE single hue. Variety comes from alpha, never from a second hue. */
+  --amber:#f2b455;
+  --amber-72:rgba(242,180,85,.72);
+  --amber-44:rgba(242,180,85,.55);
+  --amber-26:rgba(242,180,85,.26);
+  --amber-14:rgba(242,180,85,.14);
+  --amber-07:rgba(242,180,85,.07);
+  --amber-035:rgba(242,180,85,.035);
+
+  /* the one permitted exception: desaturated green marks "still trading" */
+  --live:#63a98b;
+  --live-30:rgba(99,169,139,.30);
+
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --r-control:8px;
+  --r-card:14px;
+  --gutter:clamp(18px,4vw,56px);
+  --nav-h:64px;
+
+  /* chart coordinate system — x is hours since the last print, domain −8.5…62.5 */
+  --x-open:2.8%;   /* 13:30 UTC, session open, −6.5h */
+  --x-bell:12%;    /* 20:00 UTC, the last print,  0h */
+  --x-now:38.7%;   /* now,                      +19h */
+  --x-next:96.5%;  /* next print,               +60h */
+  /* y is price, domain 762.80…763.35 */
+  --y-dex:29.09%;  /* 763.19 */
+  --y-eq:70.91%;   /* 762.96 */
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding-top:var(--nav-h);
+  background:var(--base);color:var(--ink-2);
+  font:400 14px/1.7 var(--sans);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ── type ───────────────────────────────────────────────────────────────── */
+h1,h2,h3{font-family:var(--display);color:var(--ink-1);font-stretch:88%;margin:0;letter-spacing:-.018em}
+h1{font-size:clamp(32px,5.4vw,56px);line-height:.98;font-weight:700}
+h2{font-size:clamp(22px,3.2vw,34px);line-height:1.04;font-weight:700}
+h3{font-size:clamp(16px,1.6vw,19px);line-height:1.2;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+
+.micro{
+  font:500 11px/1.25 var(--mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;
+}
+.lede{font-size:clamp(15px,1.6vw,17px);line-height:1.55;color:var(--ink-2)}
+
+/* every number a reader might compare is mono and tabular. no exceptions. */
+.n,.val,.big{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.n{font-size:.94em;letter-spacing:-.01em;color:var(--ink-1)}
+.val{font-size:14px;color:var(--ink-1);font-weight:500}
+.big{font-size:clamp(23px,3.4vw,34px);line-height:1;color:var(--ink-1);font-weight:500;letter-spacing:-.02em}
+
+a{color:var(--ink-1);text-underline-offset:3px;text-decoration-color:var(--border-hi)}
+a:hover{text-decoration-color:var(--amber)}
+
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0}
+.skip:focus{left:8px;top:8px;z-index:100;background:var(--raised);color:var(--ink-1);
+  padding:12px 16px;border:1px solid var(--amber);border-radius:var(--r-control)}
+
+/* ── top-fixed nav (gene T) ─────────────────────────────────────────────── */
+.nav{
+  position:fixed;inset:0 0 auto 0;height:var(--nav-h);z-index:50;
+  background:var(--base);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:clamp(12px,2.4vw,32px);
+  padding:0 var(--gutter);
+}
+.mark{display:flex;align-items:center;gap:9px;flex:none}
+.mark-sq{width:9px;height:9px;background:var(--amber);flex:none}
+.mark-txt{font-family:var(--display);font-stretch:82%;font-weight:700;font-size:15px;
+  letter-spacing:.055em;text-transform:uppercase;color:var(--ink-1)}
+.nav-links{display:flex;gap:2px;margin-left:8px}
+.nav-links a{
+  display:flex;align-items:center;height:44px;padding:0 11px;border-radius:var(--r-control);
+  font:500 12px/1 var(--sans);letter-spacing:.01em;color:var(--ink-3);text-decoration:none;
+  transition:color 150ms ease-out,background-color 150ms ease-out;
+}
+.nav-links a:hover{color:var(--ink-1);background:var(--raised)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none}
+.chip{
+  display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 11px;
+  border:1px solid var(--amber-26);background:var(--amber-07);border-radius:var(--r-control);
+  font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--amber);
+}
+.dna{
+  height:30px;display:inline-flex;align-items:center;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--r-control);
+  font:500 10px/1 var(--mono);letter-spacing:.16em;color:var(--ink-3);
+}
+.nav-cta{
+  display:inline-flex;align-items:center;height:44px;padding:0 16px;
+  background:var(--amber);color:#0a0700;border:0;border-radius:var(--r-control);
+  font:600 13px/1 var(--sans);text-decoration:none;cursor:pointer;
+  transition:background-color 150ms ease-out;
+}
+.nav-cta:hover{background:#f7c273}
+.nav-cta:active{transform:scale(.99)}
+
+/* ── severity marker: dot + label + colour, never colour alone ──────────── */
+.sev{display:inline-flex;align-items:center;gap:8px;font:500 11px/1 var(--mono);
+  letter-spacing:.11em;text-transform:uppercase;color:var(--amber)}
+.sev i{width:8px;height:8px;border-radius:50%;background:var(--amber);flex:none}
+.sev.hollow i{background:transparent;border:2px solid var(--amber);width:9px;height:9px}
+.sev.idle{color:var(--ink-3)}
+.sev.idle i{border-radius:0;background:var(--border-hi);width:8px;height:8px}
+.sev.live{color:var(--live)}
+.sev.live i{background:var(--live)}
+
+/* ── layout scaffold (gene A: nothing is centred) ───────────────────────── */
+.wrap{padding-inline:var(--gutter);max-width:1560px;margin:0 auto}
+.band{border-top:1px solid var(--border)}
+.eyebrow-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+
+/* ── S1 hero — split, asymmetric, chart bleeds off the right edge ───────── */
+.hero{
+  max-width:1560px;margin:0 auto;padding-left:var(--gutter);
+  display:grid;grid-template-columns:minmax(0,min(34vw,420px)) minmax(0,1fr);
+  gap:clamp(26px,3.6vw,58px);align-items:start;
+  padding-top:clamp(40px,6vw,76px);padding-bottom:clamp(40px,6vw,74px);
+}
+.rail{display:flex;flex-direction:column;gap:22px;padding-top:6px}
+.rail h1{margin-top:4px}
+.rail-stats{display:grid;grid-template-columns:1.18fr 1fr;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden}
+.stat{background:var(--surface);padding:15px 16px 16px;display:flex;flex-direction:column;gap:7px}
+.stat .micro{font-size:10px;letter-spacing:.11em}
+.stat .foot{font:400 11.5px/1.35 var(--sans);color:var(--ink-3)}
+.stat.is-live{background:var(--raised)}
+.countdown{
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:15px 0;
+}
+.countdown .big{color:var(--amber)}
+.countdown .micro{max-width:30ch;line-height:1.55}
+.rail-cta{display:flex;gap:10px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;
+  border-radius:var(--r-control);font:600 13.5px/1 var(--sans);cursor:pointer;text-decoration:none;
+  border:1px solid transparent;transition:background-color 150ms ease-out,border-color 150ms ease-out,color 150ms ease-out;
+}
+.btn-1{background:var(--amber);color:#0a0700}
+.btn-1:hover{background:#f7c273}
+.btn-2{background:transparent;color:var(--ink-1);border-color:var(--border-hi)}
+.btn-2:hover{border-color:var(--amber);color:var(--amber)}
+.btn:active{transform:scale(.99)}
+.provenance{font:400 11.5px/1.5 var(--sans);color:var(--ink-3);border-left:1px solid var(--border);padding-left:12px}
+
+/* ── the chart panel: grid-breaking, flush to the viewport edge ─────────── */
+.chart-panel{
+  background:var(--surface);
+  border:1px solid var(--border);border-right:0;
+  border-radius:var(--r-card) 0 0 var(--r-card);
+  padding:18px 0 0;min-width:0;
+}
+.chart-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;padding:0 20px 14px;
+  border-bottom:1px solid var(--hairline)}
+.chart-head .t{font-family:var(--display);font-stretch:88%;font-weight:600;font-size:15px;color:var(--ink-1)}
+.chart-head .s{font:400 12px/1.4 var(--sans);color:var(--ink-3);margin-top:3px}
+.chart-head .right{margin-left:auto;text-align:right}
+
+.chart{display:flex;padding:14px 0 0}
+/* margin-bottom matches the plot's bottom inset so labels land on their gridlines */
+.yaxis{position:relative;width:62px;flex:none;margin-bottom:46px}
+.yaxis .yl{position:absolute;right:9px;transform:translateY(-50%);
+  font:400 10.5px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-3);white-space:nowrap}
+.chart-body{position:relative;flex:1 1 auto;min-width:0;height:clamp(300px,31vw,430px);padding-right:14px}
+.plot{position:absolute;inset:0 14px 46px 0}
+.layer{position:absolute;inset:0}
+
+.gl{position:absolute;left:0;right:0;height:1px;background:var(--hairline)}
+.gl.base{background:var(--border)}
+
+/* the shut window: flat washes of the single hue. no gradient anywhere. */
+.region{position:absolute;top:0;bottom:0;left:var(--x-bell);right:0;background:var(--amber-035)}
+.region-remain{position:absolute;top:0;bottom:0;left:var(--x-now);right:calc(100% - var(--x-next));
+  background:var(--amber-035)}
+.session{position:absolute;top:0;bottom:0;left:var(--x-open);width:calc(var(--x-bell) - var(--x-open));
+  background:rgba(255,255,255,.022)}
+
+/* the terminus — the violence, done in 2px */
+.terminus{position:absolute;top:0;bottom:0;left:var(--x-bell);width:2px;background:var(--amber);margin-left:-1px}
+.terminus::before,.terminus::after{content:"";position:absolute;left:-4px;width:10px;height:3px;background:var(--amber)}
+.terminus::before{top:0}
+.terminus::after{bottom:0}
+.vline{position:absolute;top:0;bottom:0;left:var(--x-next);width:0;
+  border-left:1px dashed var(--amber-44)}
+
+/* the stale rule: the value the feed still reports, unchanged */
+.stale{position:absolute;top:var(--y-eq);left:var(--x-bell);right:calc(100% - var(--x-next));height:0;
+  border-top:1px dashed var(--amber-44)}
+
+/* markers */
+.mk{position:absolute;transform:translate(-50%,-50%)}
+.mk-eq{left:var(--x-bell);top:var(--y-eq);width:11px;height:11px;background:var(--ink-1);
+  outline:4px solid var(--surface)}
+.mk-dex{left:var(--x-now);top:var(--y-dex);width:13px;height:13px;border-radius:50%;
+  border:2.5px solid var(--live);background:var(--surface);outline:3px solid var(--surface)}
+.mk-dex::after{content:"";position:absolute;inset:2.5px;border-radius:50%;background:var(--live)}
+
+/* dimension lines, FT style: caps + a label, no legend */
+.dim-v{position:absolute;left:var(--x-now);top:var(--y-dex);height:calc(var(--y-eq) - var(--y-dex));
+  width:1px;background:var(--amber-72);margin-left:-.5px}
+.dim-v::before,.dim-v::after{content:"";position:absolute;left:-4px;width:9px;height:1px;background:var(--amber-72)}
+.dim-v::before{top:0}.dim-v::after{bottom:0}
+.dim-h{position:absolute;height:1px;background:var(--amber-44)}
+.dim-h::before,.dim-h::after{content:"";position:absolute;top:-4px;width:1px;height:9px;background:var(--amber-44)}
+.dim-h::before{left:0}.dim-h::after{right:0}
+.dim-h.elapsed{left:var(--x-bell);width:calc(var(--x-now) - var(--x-bell));bottom:3%;background:var(--border-hi)}
+.dim-h.elapsed::before,.dim-h.elapsed::after{background:var(--border-hi)}
+.dim-h.remain{left:var(--x-now);width:calc(var(--x-next) - var(--x-now));bottom:3%}
+
+/* annotations live inside the chart. there is no legend. */
+.an{position:absolute;font:400 11px/1.35 var(--sans);color:var(--ink-2);white-space:nowrap}
+.an .k{display:block;font:500 10px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.an-stop{left:calc(var(--x-bell) + 10px);top:3%}
+.an-stop .k{color:var(--amber)}
+.an-eq{left:calc(var(--x-bell) + 10px);top:calc(var(--y-eq) + 9px)}
+.an-eq .k{color:var(--ink-3)}
+.an-dex{left:calc(var(--x-now) + 12px);top:calc(var(--y-dex) - 26px)}
+.an-dex .k{color:var(--live)}
+.an-gap{right:calc(100% - var(--x-now) + 11px);top:50%;transform:translateY(-50%);text-align:right}
+.an-gap .k{color:var(--amber)}
+.an-next{right:calc(100% - var(--x-next) + 10px);top:3%;text-align:right}
+.an-next .k{color:var(--amber-72)}
+/* label knocked out over its own dimension line, FT style */
+.an-dim{position:absolute;bottom:3%;transform:translate(-50%,50%);background:var(--surface);
+  padding:0 8px;font:500 10px/1 var(--mono);letter-spacing:.09em;
+  text-transform:uppercase;white-space:nowrap}
+.an-dim.elapsed{left:calc((var(--x-bell) + var(--x-now)) / 2);color:var(--ink-3)}
+.an-dim.remain{left:calc((var(--x-now) + var(--x-next)) / 2);color:var(--amber)}
+
+/* the block annotation that sits in the dead space */
+.an-void{
+  position:absolute;left:52%;top:40%;max-width:38ch;
+  border-top:1px solid var(--amber-26);padding-top:10px;
+  font:400 12px/1.5 var(--sans);color:var(--ink-2);white-space:normal;
+}
+.an-void b{color:var(--ink-1);font-weight:600}
+.an-void code{font-family:var(--mono);font-size:11.5px;color:var(--amber)}
+
+.xaxis{position:absolute;left:0;right:14px;bottom:0;height:46px;border-top:1px solid var(--border)}
+.xt{position:absolute;top:0;width:1px;height:6px;background:var(--border-hi)}
+.xl{position:absolute;top:11px;font:500 10px/1.3 var(--mono);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.xl b{display:block;font-weight:500;color:var(--ink-2);letter-spacing:.06em}
+.xl.c{transform:translateX(-50%)}
+.xl.r{transform:translateX(-100%);text-align:right}
+.xbracket{position:absolute;top:30px;left:var(--x-open);width:calc(var(--x-bell) - var(--x-open));
+  height:5px;border:1px solid var(--border-hi);border-top:0}
+
+figure{margin:0}
+figcaption{
+  padding:16px 20px 18px;border-top:1px solid var(--hairline);
+  display:grid;grid-template-columns:1fr;gap:8px;
+}
+.cap-note{font:400 12px/1.55 var(--sans);color:var(--ink-3);max-width:96ch}
+.cap-note strong{color:var(--ink-2);font-weight:600}
+details.alt{border-top:1px solid var(--hairline)}
+details.alt summary{
+  cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;padding:0 20px;
+  font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+}
+details.alt summary::-webkit-details-marker{display:none}
+details.alt summary:hover{color:var(--amber)}
+details.alt summary::after{content:"[ + ]";margin-left:10px;color:var(--border-hi)}
+details.alt[open] summary::after{content:"[ − ]"}
+.alt-body{padding:0 20px 20px}
+/* data tables scroll inside themselves rather than widening the page */
+.tscroll{overflow-x:auto}
+
+/* ── tables ─────────────────────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--hairline);vertical-align:baseline}
+th{font:500 10px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1px solid var(--border)}
+td{font:400 13px/1.5 var(--sans);color:var(--ink-2)}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-1)}
+tr:last-child td{border-bottom:0}
+
+/* ── S2 the window ──────────────────────────────────────────────────────── */
+.window{display:grid;grid-template-columns:1.55fr 1fr 1fr 1.15fr;gap:1px;background:var(--border);
+  border-block:1px solid var(--border)}
+.wcell{background:var(--base);padding:clamp(22px,3vw,34px) clamp(16px,2vw,26px);
+  display:flex;flex-direction:column;gap:9px}
+.wcell:first-child{background:var(--surface)}
+.wcell .big{color:var(--amber)}
+.wcell p{font:400 12.5px/1.5 var(--sans);color:var(--ink-3);max-width:34ch}
+
+/* ── S3 volatility ──────────────────────────────────────────────────────── */
+.sec{padding-block:clamp(52px,7vw,96px)}
+.split-53{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(26px,4vw,72px);align-items:start}
+.split-73{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(26px,4vw,72px);align-items:start}
+.sec p.body{font:400 14px/1.7 var(--sans);color:var(--ink-2);max-width:46ch;margin-top:14px}
+.offset{margin-top:clamp(0px,3vw,46px)}
+
+.volrow{border-top:1px solid var(--border);padding:18px 0 20px}
+.volrow:last-child{border-bottom:1px solid var(--border)}
+.volhead{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.volhead .t{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink-1);letter-spacing:.02em}
+.volhead .d{margin-left:auto;font:500 11px/1 var(--mono);color:var(--amber);font-variant-numeric:tabular-nums}
+.bar{display:grid;grid-template-columns:118px minmax(0,1fr) 74px;gap:12px;align-items:center;margin-bottom:8px}
+.bar .lab{font:500 10px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.bar .track{display:block;height:12px;background:var(--hairline);border-radius:2px;overflow:hidden}
+.bar .fill{display:block;height:100%;background:var(--border-hi)}
+.bar.shut .fill{background:var(--amber)}
+.bar.shut .lab{color:var(--amber)}
+.bar .v{font:500 12px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-1);text-align:right}
+.volscale{display:flex;justify-content:space-between;font:400 10px/1 var(--mono);color:var(--ink-3);
+  padding:6px 74px 0 130px}
+
+/* ── S4 exposure ────────────────────────────────────────────────────────── */
+.expo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;margin-top:22px}
+.expo div{background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:7px}
+.callout{
+  margin-top:22px;border:1px solid var(--amber-26);border-left:3px solid var(--amber);
+  background:var(--amber-07);border-radius:0 var(--r-card) var(--r-card) 0;padding:18px 20px;
+}
+.callout .h{font-family:var(--display);font-stretch:88%;font-weight:600;font-size:17px;color:var(--ink-1);
+  line-height:1.15}
+.callout p{margin-top:8px;font:400 13px/1.6 var(--sans);color:var(--ink-2);max-width:60ch}
+
+/* ── S5 the instrument, with all four states ────────────────────────────── */
+.monitor{border:1px solid var(--border);border-radius:var(--r-card);background:var(--surface);overflow:hidden}
+.mon-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;
+  border-bottom:1px solid var(--border);background:var(--raised)}
+.mon-bar .t{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.tabs{margin-left:auto;display:flex;gap:2px}
+.tab{
+  height:44px;min-width:44px;padding:0 14px;background:transparent;border:1px solid transparent;
+  border-radius:var(--r-control);color:var(--ink-3);cursor:pointer;
+  font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  transition:color 150ms ease-out,border-color 150ms ease-out,background-color 150ms ease-out;
+}
+.tab:hover{color:var(--ink-1)}
+.tab[aria-selected="true"]{color:var(--amber);border-color:var(--amber-26);background:var(--amber-07)}
+.mon-body{padding:20px;min-height:268px}
+.panel[hidden]{display:none}
+
+.poslist{display:flex;flex-direction:column;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden}
+.pos{background:var(--raised);padding:15px 16px;display:grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) auto;gap:16px;align-items:center}
+.pos .name{font:500 13px/1.3 var(--mono);color:var(--ink-1)}
+.pos .sub{font:400 11px/1.3 var(--sans);color:var(--ink-3);margin-top:3px}
+.pos .k{font:500 9.5px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.pos .v{font:500 13px/1.3 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-1);margin-top:3px}
+.btn-sm{height:44px;padding:0 15px;border-radius:var(--r-control);border:1px solid var(--border-hi);
+  background:transparent;color:var(--ink-1);font:600 12px/1 var(--sans);cursor:pointer;
+  transition:border-color 150ms ease-out,color 150ms ease-out}
+.btn-sm:hover{border-color:var(--amber);color:var(--amber)}
+.btn-sm.solid{background:var(--amber);border-color:var(--amber);color:#0a0700}
+.btn-sm.solid:hover{background:#f7c273}
+
+/* LOADING — a skeleton shaped like the chart, dashed grid, nothing moving */
+.skel{position:relative;height:196px;border:1px solid var(--hairline);border-radius:var(--r-card);
+  overflow:hidden;background:var(--raised)}
+.skel .sgl{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--border)}
+.skel .svl{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed var(--border)}
+.skel .sblk{position:absolute;background:var(--hairline);border-radius:3px}
+.skel .smk{position:absolute;width:11px;height:11px;border:1px dashed var(--border-hi);
+  transform:translate(-50%,-50%)}
+.skel-rows{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.skel-rows i{display:block;height:12px;background:var(--hairline);border-radius:3px}
+
+.empty,.errstate{border:1px dashed var(--border);border-radius:var(--r-card);padding:34px 24px;
+  display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.errstate{border-style:solid;border-color:var(--amber-26);background:var(--amber-07)}
+.empty h3,.errstate h3{font-size:18px}
+.empty p,.errstate p{font:400 13px/1.6 var(--sans);color:var(--ink-2);max-width:58ch}
+.errstate code{font:400 12px/1.5 var(--mono);color:var(--amber);word-break:break-all}
+
+/* ── footer ─────────────────────────────────────────────────────────────── */
+footer{border-top:1px solid var(--border);padding-block:clamp(34px,4.5vw,58px) 40px;background:var(--surface)}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(22px,3vw,54px);align-items:start}
+.foot-grid p{font:400 12.5px/1.65 var(--sans);color:var(--ink-3);max-width:58ch}
+.foot-grid p + p{margin-top:10px}
+.foot-grid strong{color:var(--ink-2);font-weight:600}
+.genes{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.genes span{font:400 11px/1.4 var(--mono);color:var(--ink-3)}
+.genes b{color:var(--amber);font-weight:500}
+.foot-rule{border-top:1px solid var(--border);margin-top:32px;padding-top:18px;
+  display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+
+/* ── motion: one staggered reveal of the chart. nothing else moves. ─────── */
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .rv{animation:rise 280ms cubic-bezier(.22,1,.36,1) both}
+  .rv1{animation-delay:30ms}.rv2{animation-delay:95ms}.rv3{animation-delay:160ms}
+  .rv4{animation-delay:225ms}.rv5{animation-delay:290ms}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* ── responsive ─────────────────────────────────────────────────────────── */
+@media (max-width:1180px){
+  .window{grid-template-columns:1fr 1fr}
+  .wcell:first-child{grid-column:1 / -1}
+  .an-void{left:46%;max-width:26ch;font-size:11.5px}
+}
+@media (max-width:980px){
+  .nav-links{display:none}
+  .hero{grid-template-columns:minmax(0,1fr);padding-right:var(--gutter);gap:34px}
+  .chart-panel{margin-inline:calc(-1 * var(--gutter));border-inline:0;border-radius:0}
+  .chart-body{height:clamp(360px,64vw,440px)}
+  .split-53,.split-73{grid-template-columns:minmax(0,1fr)}
+  .offset{margin-top:0}
+  .foot-grid{grid-template-columns:minmax(0,1fr)}
+  .an-void{display:none}
+}
+@media (max-width:720px){
+  .nav-cta span.long{display:none}
+  .chip .long{display:none}
+  .rail-stats{grid-template-columns:1fr}
+  .pos{grid-template-columns:minmax(0,1fr) minmax(0,1fr);row-gap:14px}
+  .pos .act{grid-column:1 / -1}
+  .btn-sm{width:100%}
+  .bar{grid-template-columns:92px minmax(0,1fr) 62px;gap:9px}
+  .volscale{padding:6px 62px 0 101px}
+  .yaxis{width:50px}
+  .an{font-size:10px}
+  .an .k{font-size:9px;letter-spacing:.1em}
+  .an-dex{left:calc(var(--x-now) + 10px);top:calc(var(--y-dex) - 30px)}
+  .an-gap{right:auto;left:calc(var(--x-now) + 10px);text-align:left;top:58%}
+  /* the chart sheds its prose on narrow screens; the caption carries it instead */
+  .lg{display:none}
+  .an-stop{left:calc(var(--x-bell) + 8px)}
+  .an-eq{left:calc(var(--x-bell) + 8px)}
+  .an-next{right:calc(100% - var(--x-next) + 8px)}
+  .xl{font-size:9px;letter-spacing:.05em}
+  .tabs{margin-left:0;width:100%}
+  .tab{flex:1;padding:0 4px;font-size:10px;letter-spacing:.05em}
+  .window{grid-template-columns:1fr}
+  .wcell:first-child{grid-column:auto}
+  .dna{display:none}
+}
+@media (max-width:420px){
+  .expo{grid-template-columns:1fr}
+  .mark-txt{font-size:13px}
+  .chip{padding:0 8px;font-size:10px;letter-spacing:.06em}
+}
+/* below the supported floor, the nav sheds the status chip rather than spilling */
+@media (max-width:360px){
+  .nav{gap:8px;padding:0 14px}
+  .chip{display:none}
+  .nav-cta{padding:0 12px;font-size:12px}
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ── gene T: top-fixed nav, 64px, 1px bottom border ──────────────────── -->
+<header class="nav">
+  <div class="mark"><span class="mark-sq" aria-hidden="true"></span><span class="mark-txt">Closing&nbsp;Bell</span></div>
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#window">The window</a>
+    <a href="#vol">Volatility</a>
+    <a href="#exposure">Exposure</a>
+    <a href="#monitor">Monitor</a>
+  </nav>
+  <div class="nav-right">
+    <span class="chip"><span class="sev" style="gap:6px"><i aria-hidden="true"></i></span>US&nbsp;Equities<span class="long">&nbsp;·&nbsp;Closed</span></span>
+    <span class="dna" title="Asymmetric · Top-fixed nav · Split hero · Monochrome · Custom display type">DNA-A-T-S-M-C</span>
+    <a class="nav-cta" href="#monitor">Check&nbsp;my<span class="long">&nbsp;position</span></a>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ════ S1 · SPLIT HERO (gene S) — asymmetric, chart breaks the grid ════ -->
+<section class="hero">
+
+  <div class="rail">
+    <div class="eyebrow-row">
+      <span class="sev"><i aria-hidden="true"></i>Unpriced now</span>
+      <span class="micro">Equity.US.SPY/USD</span>
+    </div>
+
+    <h1>The feed stopped.<br>The token didn’t.</h1>
+
+    <p class="lede">Pyth holds its last SPY print until Monday, because Pyth cannot publish a price the market isn’t quoting. SPYx keeps trading against that frozen number for another <span class="n">41</span> hours, with creation and redemption switched off.</p>
+
+    <div class="rail-stats">
+      <div class="stat">
+        <span class="micro">Last priced · Pyth</span>
+        <span class="big">$762.96</span>
+        <span class="foot"><span class="n">publish_time</span> frozen <span class="n">19h</span> ago</span>
+      </div>
+      <div class="stat is-live">
+        <span class="micro" style="color:var(--live)">Trading now · SPYx</span>
+        <span class="big">$763.19</span>
+        <span class="foot">Implied share price, continuous</span>
+      </div>
+    </div>
+
+    <div class="countdown">
+      <span class="micro">Until the underlying is priced again</span>
+      <span class="big">41h&nbsp;00m</span>
+    </div>
+
+    <div class="rail-cta">
+      <a class="btn btn-1" href="#monitor">Check my position</a>
+      <a class="btn btn-2" href="#monitor">How the exit works</a>
+    </div>
+
+    <p class="provenance">Every figure here is read back from a measurement or a live feed. Nothing on this page is modelled, and nothing is drawn that was not observed.</p>
+  </div>
+
+  <!-- ── the chart. it explains itself; there is no legend. ────────────── -->
+  <div class="chart-panel">
+    <figure>
+      <div class="chart-head">
+        <div>
+          <div class="t">Two measured prints, and the space between them</div>
+          <div class="s">Pyth <span class="n">Equity.US.SPY/USD</span> against the SPYx implied share price</div>
+        </div>
+        <div class="right">
+          <div class="micro">Gap</div>
+          <div class="val" style="color:var(--amber)">+$0.23 · +0.030%</div>
+        </div>
+      </div>
+
+      <div class="chart" role="img" aria-label="Chart of two measured price points. The Pyth equity feed for SPY published 762 dollars 96 cents at the closing bell and has not published since; its value is held flat and its publish time is frozen 19 hours ago. The SPYx tokenized share implies 763 dollars 19 cents right now, 19 hours after that last print. No price path is drawn between the two points because no tick series was measured. 41 hours remain before the underlying is priced again, a 60 hour unpriced window in total.">
+
+        <div class="yaxis" aria-hidden="true">
+          <span class="yl" style="top:9.09%">763.30</span>
+          <span class="yl" style="top:36.36%">763.15</span>
+          <span class="yl" style="top:63.64%">763.00</span>
+          <span class="yl" style="top:90.91%">762.85</span>
+        </div>
+
+        <div class="chart-body">
+          <div class="plot" aria-hidden="true">
+
+            <!-- 1 · grid + regions -->
+            <div class="layer rv rv1">
+              <span class="session"></span>
+              <span class="region"></span>
+              <span class="region-remain"></span>
+              <span class="gl" style="top:9.09%"></span>
+              <span class="gl" style="top:36.36%"></span>
+              <span class="gl" style="top:63.64%"></span>
+              <span class="gl" style="top:90.91%"></span>
+              <span class="gl base" style="top:100%"></span>
+            </div>
+
+            <!-- 2 · the terminus and the frozen value -->
+            <div class="layer rv rv2">
+              <span class="terminus"></span>
+              <span class="stale"></span>
+              <span class="vline"></span>
+            </div>
+
+            <!-- 3 · the two measured points -->
+            <div class="layer rv rv3">
+              <span class="mk mk-eq"></span>
+              <span class="mk mk-dex"></span>
+              <span class="dim-v"></span>
+            </div>
+
+            <!-- 4 · annotations, in the chart, FT style -->
+            <div class="layer rv rv4">
+              <span class="an an-stop"><span class="k">Feed stops<span class="lg"> · 20:00:00 UTC</span></span><span class="lg">no further publish until Monday</span></span>
+              <span class="an an-eq"><span class="k">Last print<span class="lg">, held</span></span><span>$762.96<span class="lg"> · publish_time frozen</span></span></span>
+              <span class="an an-dex"><span class="k">Trading now</span><span>$763.19<span class="lg"> implied, no NAV anchor</span></span></span>
+              <span class="an an-gap"><span class="k">+$0.23</span>+0.030%</span>
+              <span class="an an-next"><span class="k">Next print<span class="lg"> · Mon 13:30 UTC</span></span><span class="lg">session reopens</span></span>
+              <p class="an-void"><b>Nothing is drawn here because nothing was measured.</b> The issuer holds <code>maxOrderFiatValue: 0</code> while the market is shut — creation and redemption are off, so no arbitrage pulls the token back to NAV.</p>
+            </div>
+
+            <!-- 5 · time dimensions -->
+            <div class="layer rv rv5">
+              <span class="dim-h elapsed"></span>
+              <span class="dim-h remain"></span>
+              <span class="an-dim elapsed">19h elapsed<span class="lg">, unpriced</span></span>
+              <span class="an-dim remain">41h remaining</span>
+            </div>
+          </div>
+
+          <div class="xaxis" aria-hidden="true">
+            <span class="xt" style="left:var(--x-open)"></span>
+            <span class="xt" style="left:var(--x-bell)"></span>
+            <span class="xt" style="left:var(--x-now)"></span>
+            <span class="xt" style="left:var(--x-next)"></span>
+            <span class="xbracket lg"></span>
+            <span class="xl lg" style="left:var(--x-open)">13:30<b>open</b></span>
+            <span class="xl c" style="left:var(--x-bell)">20:00<b>bell</b></span>
+            <span class="xl c" style="left:var(--x-now)">+19h<b>now</b></span>
+            <span class="xl r" style="left:var(--x-next)">+60h<b>next open</b></span>
+          </div>
+        </div>
+      </div>
+
+      <figcaption>
+        <p class="cap-note"><strong>How to read this.</strong> Only two points on this chart were measured: the Pyth equity print at the bell, and the SPYx implied price right now. <strong>No path is drawn between them</strong> — we hold no tick series for the token, so inventing a line would be a picture of nothing. The dashed rule is not a price path either: it is the single frozen value the feed keeps reporting, unchanged, with a <span class="n">19</span>-hour-old <span class="n">publish_time</span>.</p>
+        <p class="cap-note">The vertical scale is truncated to a <span class="n">$0.55</span> range so the two prints separate; the price gap is <span class="n">$0.23</span>, or <span class="n">0.030%</span>. The horizontal scale is not truncated, and it is the finding. Through the whole shaded window the issuer holds <span class="n">maxOrderFiatValue: 0</span> — creation and redemption are off, so no arbitrage pulls the token back to NAV.</p>
+      </figcaption>
+
+      <details class="alt">
+        <summary>Read this chart as a table</summary>
+        <div class="alt-body tscroll" tabindex="0" role="region" aria-label="Measured values table">
+          <table>
+            <caption class="micro" style="text-align:left;padding-bottom:10px">Measured values behind the chart</caption>
+            <thead>
+              <tr><th scope="col">Series</th><th scope="col" class="num">Value</th><th scope="col">Timing</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Pyth <span class="n">Equity.US.SPY/USD</span>, last print</td><td class="num">$762.96</td><td>20:00:00 UTC · publish_time frozen 19h ago</td></tr>
+              <tr><td>SPYx implied share price</td><td class="num">$763.19</td><td>Now · continuous, no create/redeem</td></tr>
+              <tr><td>Gap between the two prints</td><td class="num">+$0.23</td><td>+0.030%, derived</td></tr>
+              <tr><td>Pyth <span class="n">Equity.US.QQQ/USD</span>, last print</td><td class="num">$721.45</td><td>Same bell, same freeze</td></tr>
+              <tr><td>QQQx implied share price</td><td class="num">$722.08</td><td>Now · +$0.63, +0.087%, derived</td></tr>
+              <tr><td>Unpriced window</td><td class="num">60h 00m</td><td>19h elapsed, 41h remaining</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+  </div>
+</section>
+
+<!-- ════ S2 · THE WINDOW — full-bleed band, deliberately unequal columns ══ -->
+<section id="window" class="window" aria-label="The shut window in four measurements">
+  <div class="wcell">
+    <span class="micro">The asymmetry</span>
+    <span class="big">70.9%</span>
+    <p>of tokenized-equity volume arrives outside the regular session, when the underlying is not being priced.</p>
+  </div>
+  <div class="wcell">
+    <span class="micro">Fully closed</span>
+    <span class="big">36.3%</span>
+    <p>arrives while the market is fully shut, not merely pre- or post-market.</p>
+  </div>
+  <div class="wcell">
+    <span class="micro">Issuer limit while shut</span>
+    <span class="big">0</span>
+    <p><span class="n">maxOrderFiatValue: 0</span>. Creation and redemption are off, so nothing anchors the token to NAV.</p>
+  </div>
+  <div class="wcell">
+    <span class="micro">Priced hours per week</span>
+    <span class="big">32.5 / 168</span>
+    <p>13:30–20:00 UTC, weekdays. The other <span class="n">135.5</span> hours are the product.</p>
+  </div>
+</section>
+
+<!-- ════ S3 · VOLATILITY — offset split, prose left, data right ══════════ -->
+<section id="vol" class="sec wrap">
+  <div class="split-53">
+    <div>
+      <span class="micro">Measured, not assumed</span>
+      <h2 style="margin-top:12px">Volatility does not<br>sleep when the<br>market does.</h2>
+      <p class="body">The intuition is that a tokenized share goes quiet when its underlying does. It does the opposite. Hourly realised volatility is <em>higher</em> in the hours nobody can price than in the hours everybody can — which is exactly the window in which the reference feed is frozen and the issuer will not create or redeem.</p>
+      <p class="body">That is the case for warning a liquidity provider before the bell rather than after it.</p>
+    </div>
+
+    <div class="offset">
+      <div class="volrow">
+        <div class="volhead"><span class="t">SPYx</span><span class="micro">hourly realised vol</span><span class="d">+20.9% derived</span></div>
+        <div class="bar shut">
+          <span class="lab">Market shut</span>
+          <span class="track"><span class="fill" style="width:57.4%"></span></span>
+          <span class="v">0.689%</span>
+        </div>
+        <div class="bar">
+          <span class="lab">Market open</span>
+          <span class="track"><span class="fill" style="width:47.5%"></span></span>
+          <span class="v">0.570%</span>
+        </div>
+      </div>
+
+      <div class="volrow">
+        <div class="volhead"><span class="t">KOx</span><span class="micro">hourly realised vol</span><span class="d">+30.5% derived</span></div>
+        <div class="bar shut">
+          <span class="lab">Market shut</span>
+          <span class="track"><span class="fill" style="width:89.3%"></span></span>
+          <span class="v">1.071%</span>
+        </div>
+        <div class="bar">
+          <span class="lab">Market open</span>
+          <span class="track"><span class="fill" style="width:68.4%"></span></span>
+          <span class="v">0.821%</span>
+        </div>
+      </div>
+      <div class="volscale" aria-hidden="true"><span>0.000%</span><span>1.200%</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ S4 · EXPOSURE — 7/5 split, the number block overhangs ═══════════ -->
+<section id="exposure" class="sec wrap band">
+  <div class="split-73">
+    <div>
+      <span class="micro">Right now, on Raydium CLMM</span>
+      <h2 style="margin-top:12px">This is not a thought experiment.</h2>
+      <div class="expo">
+        <div><span class="micro">Positions exposed</span><span class="big">2,777</span></div>
+        <div><span class="micro">Pools</span><span class="big">76</span></div>
+        <div><span class="micro">Liquidity</span><span class="big">$16.2M</span></div>
+      </div>
+      <div class="callout">
+        <div class="h">The deepest SPYx pool is paired against a memecoin.</div>
+        <p><span class="n">STONK/SPYx</span> holds <span class="n">51%</span> of all SPYx liquidity. When the reference feed freezes for <span class="n">60</span> hours, the majority of the token’s depth sits opposite an asset with no reference price at all — in either direction.</p>
+      </div>
+    </div>
+
+    <div class="offset">
+      <span class="micro">Two feeds, one shape</span>
+      <div class="tscroll" tabindex="0" role="region" aria-label="Last print against implied price, two feeds">
+      <table style="margin-top:14px;border:1px solid var(--border);border-radius:var(--r-card)">
+        <thead>
+          <tr><th scope="col">Pair</th><th scope="col" class="num">Last print</th><th scope="col" class="num">Implied now</th><th scope="col" class="num">Gap</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>SPY / SPYx</td><td class="num">762.96</td><td class="num">763.19</td><td class="num" style="color:var(--amber)">+0.030%</td></tr>
+          <tr><td>QQQ / QQQx</td><td class="num">721.45</td><td class="num">722.08</td><td class="num" style="color:var(--amber)">+0.087%</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="body" style="margin-top:16px">Both equity feeds stopped at the same bell. Both tokens kept quoting. The gap is small today, and today is not the day it matters — the exposure is the <span class="n">41</span> hours still to run, not the <span class="n">23</span> cents already on the board.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════ S5 · THE INSTRUMENT — every state, switchable ═══════════════════ -->
+<section id="monitor" class="sec wrap band">
+  <div class="split-53" style="align-items:end">
+    <div>
+      <span class="micro">The product</span>
+      <h2 style="margin-top:12px">One screen, one decision,<br>and you sign it.</h2>
+      <p class="body">Closing Bell reads your Raydium CLMM positions, marks the ones about to sit through an unpriced window, and builds the exit. The transaction is yours — we never hold a key, and the position is never moved without your signature.</p>
+    </div>
+    <p class="body" style="max-width:40ch">All four states are rendered below, because a monitor that only looks right when the data arrives is not a monitor.</p>
+  </div>
+
+  <div class="monitor" style="margin-top:28px">
+    <div class="mon-bar">
+      <span class="t">Position monitor</span>
+      <div class="tabs" role="tablist" aria-label="Interface states">
+        <button class="tab" role="tab" id="t-ready" aria-controls="p-ready" aria-selected="true">Ready</button>
+        <button class="tab" role="tab" id="t-loading" aria-controls="p-loading" aria-selected="false" tabindex="-1">Loading</button>
+        <button class="tab" role="tab" id="t-empty" aria-controls="p-empty" aria-selected="false" tabindex="-1">Empty</button>
+        <button class="tab" role="tab" id="t-error" aria-controls="p-error" aria-selected="false" tabindex="-1">Error</button>
+      </div>
+    </div>
+
+    <div class="mon-body">
+
+      <!-- READY -->
+      <div class="panel" id="p-ready" role="tabpanel" aria-labelledby="t-ready">
+        <div class="poslist">
+          <div class="pos">
+            <div>
+              <div class="name">SPYx / USDC</div>
+              <div class="sub">Raydium CLMM · range 758.0–768.0</div>
+            </div>
+            <div><div class="k">Liquidity</div><div class="v">$41,280</div></div>
+            <div><div class="k">Unpriced in</div><div class="v" style="color:var(--amber)">0h 00m</div></div>
+            <div class="act"><span class="sev" style="margin-right:12px"><i aria-hidden="true"></i>Exposed</span><button class="btn-sm solid" type="button">Exit position</button></div>
+          </div>
+          <div class="pos">
+            <div>
+              <div class="name">STONK / SPYx</div>
+              <div class="sub">Raydium CLMM · range out of bounds</div>
+            </div>
+            <div><div class="k">Liquidity</div><div class="v">$8,940</div></div>
+            <div><div class="k">Unpriced in</div><div class="v" style="color:var(--amber)">0h 00m</div></div>
+            <div class="act"><span class="sev hollow" style="margin-right:12px"><i aria-hidden="true"></i>Review</span><button class="btn-sm" type="button">Narrow range</button></div>
+          </div>
+          <div class="pos">
+            <div>
+              <div class="name">SOL / USDC</div>
+              <div class="sub">Raydium CLMM · no equity leg</div>
+            </div>
+            <div><div class="k">Liquidity</div><div class="v">$12,105</div></div>
+            <div><div class="k">Unpriced in</div><div class="v">—</div></div>
+            <div class="act"><span class="sev idle" style="margin-right:12px"><i aria-hidden="true"></i>Not affected</span><button class="btn-sm" type="button" disabled style="opacity:.42;cursor:default">No action</button></div>
+          </div>
+        </div>
+        <p class="cap-note" style="padding:14px 2px 0">Severity is a dot, a label and a fill — never colour on its own. Solid is exposed, hollow is review, square is unaffected.</p>
+      </div>
+
+      <!-- LOADING · skeleton shaped like the chart, dashed grid, nothing animates -->
+      <div class="panel" id="p-loading" role="tabpanel" aria-labelledby="t-loading" hidden>
+        <div class="skel" role="status" aria-live="polite" aria-label="Loading positions">
+          <span class="sgl" style="top:20%"></span><span class="sgl" style="top:45%"></span>
+          <span class="sgl" style="top:70%"></span><span class="sgl" style="top:95%"></span>
+          <span class="svl" style="left:12%"></span><span class="svl" style="left:39%"></span>
+          <span class="svl" style="left:96%"></span>
+          <span class="smk" style="left:12%;top:70%"></span>
+          <span class="smk" style="left:39%;top:29%;border-radius:50%"></span>
+          <span class="sblk" style="left:16px;top:14px;width:132px;height:11px"></span>
+          <span class="sblk" style="left:16px;top:33px;width:78px;height:9px"></span>
+        </div>
+        <div class="skel-rows">
+          <i style="width:88%"></i><i style="width:64%"></i><i style="width:73%"></i>
+        </div>
+        <p class="cap-note" style="padding-top:14px">The skeleton is the chart’s own geometry in dashed rules, so the layout does not shift when the data lands. No spinner, no shimmer, nothing in motion.</p>
+      </div>
+
+      <!-- EMPTY -->
+      <div class="panel" id="p-empty" role="tabpanel" aria-labelledby="t-empty" hidden>
+        <div class="empty">
+          <span class="sev idle"><i aria-hidden="true"></i>No exposure</span>
+          <h3>No tokenized-equity positions in this wallet.</h3>
+          <p>The wallet read succeeded — there is simply nothing here that sits through an unpriced window. This is an answer, not a failure, so there is nothing to retry.</p>
+          <button class="btn btn-2" type="button">Watch this wallet for next week’s bell</button>
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div class="panel" id="p-error" role="tabpanel" aria-labelledby="t-error" hidden>
+        <div class="errstate">
+          <span class="sev hollow"><i aria-hidden="true"></i>Feed unreadable</span>
+          <h3>The Pyth price account could not be read.</h3>
+          <p>We will not show you a stale number formatted as a fresh one. Until the account responds, the exposure figure is unknown rather than zero.</p>
+          <p><code>Equity.US.SPY/USD · account read failed after 3 attempts</code></p>
+          <div class="rail-cta"><button class="btn btn-1" type="button">Retry</button><button class="btn btn-2" type="button">Show last good read (19h old)</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="micro">Inspiration, cited</span>
+        <p style="margin-top:10px"><strong>Linear.app</strong> — surgical restraint, the spacing discipline, and the rule that a one-pixel border beats a shadow and a shadow beats a glow. Nothing here has a shadow.</p>
+        <p><strong>Financial Times and The Economist charting</strong> — annotation as a first-class element. The labels live inside the plot, the chart states its own caveats, and there is no legend to look away to.</p>
+      </div>
+      <div>
+        <span class="micro">Provenance</span>
+        <p style="margin-top:10px">Prices from Pyth <span class="n">Equity.US.SPY/USD</span> and <span class="n">Equity.US.QQQ/USD</span>, and from Raydium CLMM pool state. Volume, volatility and position counts are measured, not estimated. Percentages marked <em>derived</em> are arithmetic on the measured values and nothing else.</p>
+      </div>
+      <div>
+        <span class="micro">Design DNA</span>
+        <div class="genes">
+          <span><b>A</b> Asymmetric layout</span>
+          <span><b>T</b> Top-fixed nav</span>
+          <span><b>S</b> Split hero</span>
+          <span><b>M</b> Monochrome — one hue, alpha for variety</span>
+          <span><b>C</b> Custom display type — Archivo</span>
+        </div>
+      </div>
+    </div>
+    <div class="foot-rule">
+      <span class="micro">Closing Bell · The Frozen Print · Proposal 2</span>
+      <span class="micro">DNA-A-T-S-M-C</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var list = document.querySelector('.tabs');
+  if (!list) return;
+  var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+
+  function select(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      var panel = document.getElementById(t.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !on;
+    });
+  }
+
+  list.addEventListener('click', function (e) {
+    var tab = e.target.closest('[role="tab"]');
+    if (tab) select(tab);
+  });
+
+  list.addEventListener('keydown', function (e) {
+    var i = tabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    var next = null;
+    if (e.key === 'ArrowRight') next = tabs[(i + 1) % tabs.length];
+    else if (e.key === 'ArrowLeft') next = tabs[(i - 1 + tabs.length) % tabs.length];
+    else if (e.key === 'Home') next = tabs[0];
+    else if (e.key === 'End') next = tabs[tabs.length - 1];
+    if (next) { e.preventDefault(); next.focus(); select(next); }
+  });
+})();
+</script>
+</body>
+</html>

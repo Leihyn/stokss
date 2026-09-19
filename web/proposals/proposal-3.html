@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+UX ARCHITECTURE — PROPOSAL 3, "THE CROWD"
+DNA-G-O-I-N-S  (Grid · Overlay nav · Immersive hero · Neutral · Sans)
+================================================================================
+
+THE ARGUMENT
+  2,777 is a statistic until you draw it. This page draws all 2,777 exposed
+  liquidity positions as 2,777 individual marks, clustered by the pool each one
+  actually sits in, sized by that pool's real position count. The countdown
+  floats over the crowd. You are not reading a number describing people standing
+  in the dark; you are looking at them.
+
+ENTRY
+  A liquidity provider arrives from a warning (push, Telegram, an X post), from
+  search, or from a peer link — usually on a phone, usually while the market is
+  shut. First paint is the crowd: a full-bleed unit chart, one mark per position,
+  with T-41:00:00 floating over it on a solid panel. Nothing animates except a
+  single staggered reveal of the clusters, left to right, under 500ms total.
+  Comprehension target: the size of the exposed population, pre-verbally, before
+  a sentence is read.
+
+EXIT  (three, in priority order)
+  1. Sign an exit on an exposed position — the product's whole job.
+  2. Arm a warning for the next close — returns them to top of funnel.
+  3. Leave convinced the window is real — the thesis is the retention mechanism.
+
+SCREENS  (this document is screen 1 of 3)
+  1. THE CROWD       — this page. Public. Population + live state + provenance.
+  2. POSITION MONITOR— wallet-scoped. The feed-state switcher below is its shell.
+  3. EXIT SIGNER     — transaction preview, simulation, the user signs. Not shown.
+
+HAPPY PATH
+  land on the crowd
+    -> read the population pre-verbally (2,777 marks, 76 clusters)
+    -> the floating countdown says how long the dark runs (live, ticking)
+    -> hover/arrow a cluster: which pool, how many, what anchors its price
+    -> the ledger below is the same data as a table (and the text alternative)
+    -> the clock section supplies the evidence: volume and volatility do not stop
+    -> "Watch my positions" -> screen 2 -> screen 3 -> the user signs.
+       The protocol never holds keys and never moves a position on its own.
+
+STATES  (all four demonstrated live — the FEED STATE control in the hero rail
+         swaps the hero in place, so the skeleton is seen where the crowd is)
+  LIVE     — 2,777 marks resolved across 76 pools. Default.
+  LOADING  — skeleton shaped like the crowd: the real cluster geometry drawn as
+             flat blocks, plus a determinate count (pool n of 76). No spinner,
+             no shimmer — a shimmer would be continuous ambient animation.
+  EMPTY    — indexer resolved, nothing exposed. Offers the watch path instead.
+  ERROR    — pool indexer / Pyth read failed. Says what failed, when, and gives
+             one retry at 44px. No dead end. Amber dot + the word ERROR, because
+             severity is never carried by colour alone.
+
+NAVIGATION  (overlay-nav gene)
+  Nav is absent at rest — nothing competes with the crowd on first paint. INDEX,
+  top-right, opens a full-screen overlay: role=dialog, aria-modal, focus moved to
+  the close control, Tab trapped inside, Escape closes, focus returns to INDEX.
+
+GRID  (grid gene)
+  One strict 12-column grid runs the entire page below the hero, with varied cell
+  spans and no two rows identical: 7+5 with a stacked right column, then 5+4+3,
+  then 12, then 4+4+4. Gutters and baselines align across every section.
+
+CROWD LAYOUT  (deterministic — no physics, no randomness, no mouse-follow)
+  Each pool is a column-packed block: marks fill top-to-bottom, columns left to
+  right, so block width is ceil(positions / rows) and every block hangs from one
+  shared rule. Blocks are ordered by position count. Row count is chosen per
+  breakpoint, then the cell size is derived from the measured container width, so
+  1 mark = 1 position at every viewport and the chart can never overflow.
+  MOBILE REDUCTION: nothing is dropped or aggregated. Rows go 34 -> 44 -> 52 -> 64
+  as the viewport narrows, which re-flows the same 2,777 marks into a taller,
+  narrower crowd, and per-cluster labels are withdrawn below 640px (they would be
+  sub-pixel) in favour of tap + the full ledger table.
+
+ACCESSIBILITY
+  · Text alternative: the crowd's figure links to THE LEDGER, a static HTML table
+    carrying all 19 blocks, counts, shares and anchor classes. It is in the markup
+    without JavaScript, so it survives a script failure.
+  · The SVG is aria-hidden; interaction is HTML buttons positioned over it, with
+    roving tabindex (one tab stop for the whole chart, arrow keys between
+    clusters, Enter jumps to that pool's ledger row and outlines it).
+  · Severity is dot + label + colour, never colour alone.
+  · All controls 44px. Focus ring 2px amber at 2px offset, everywhere.
+  · prefers-reduced-motion: the crowd renders complete and static, zero stagger,
+    zero transition.
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Closing Bell — The Crowd</title>
+<meta name="description" content="2,777 tokenized-equity liquidity positions, drawn one mark at a time, with 41 hours until anyone can price them.">
+<style>
+/* ===========================================================================
+   TOKENS — adopted from the Closing Bell design system (DESIGN_SYSTEM.md),
+   narrowed to this proposal's Neutral gene: greys plus exactly ONE accent.
+   =========================================================================== */
+:root{
+  /* surfaces — strict elevation ladder, no shadows anywhere */
+  --base-950:#07080a;
+  --base-900:#0c0e12;
+  --base-850:#11141a;
+  --base-800:#171b23;
+  --base-700:#222732;
+  --base-600:#2f3542;
+
+  /* text */
+  --ink-100:#ecedf1;
+  --ink-300:#a6abb8;
+  --ink-500:#7d8394;   /* house ink-500 #737988, lifted to clear 4.5:1 on base-900 */
+
+  /* the one accent: SHUT. An hour the underlying cannot be priced. */
+  --accent:#f2b455;
+  --accent-ink:#1a1206;
+
+  /* crowd mark ramp — greys only, plus the accent at the top of the scale.
+     #737988 is the house ink-500, retained here as a MARK colour, not as text. */
+  --mark-tail:#3a4150;
+  --mark-usdc:#545b6b;
+  --mark-sol:#737988;
+  --mark-none:var(--accent);
+
+  --radius-control:8px;
+  --radius-card:14px;
+
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+
+  --ease:cubic-bezier(0.22,1,0.36,1);
+  --gutter:20px;
+  --rail:1200px;
+}
+@media (min-width:768px){ :root{ --gutter:32px; } }
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  background:var(--base-950);
+  color:var(--ink-300);
+  font-family:var(--sans);
+  font-size:13px;
+  line-height:1.6;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{ background:var(--accent); color:var(--accent-ink); }
+
+/* ---- type steps: five, and one display step. No others. ---------------- */
+.t-micro{ font-size:11px; line-height:1.25; letter-spacing:.12em; text-transform:uppercase; }
+.t-value{ font-family:var(--mono); font-size:14px; line-height:1.45; font-variant-numeric:tabular-nums; }
+.t-read{ font-size:15px; line-height:1.65; }
+.t-lede{ font-size:17px; line-height:1.45; }
+
+/* EVERY number is mono with tabular figures. Nothing 3+ digits is proportional. */
+.n{ font-family:var(--mono); font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; letter-spacing:-0.01em; }
+
+h1,h2,h3{ color:var(--ink-100); font-weight:600; margin:0; letter-spacing:-0.02em; }
+h1{ font-size:clamp(28px,5.4vw,52px); line-height:1.04; }
+h2{ font-size:clamp(20px,2.6vw,27px); line-height:1.15; }
+h3{ font-size:15px; line-height:1.3; letter-spacing:-0.01em; }
+p{ margin:0; }
+a{ color:var(--ink-100); text-decoration:none; }
+table{ border-collapse:collapse; width:100%; }
+
+:where(a,button,[tabindex]):focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-radius:3px;
+}
+
+.wrap{ width:100%; max-width:var(--rail); margin:0 auto; padding-inline:var(--gutter); }
+.sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.skip{
+  position:absolute; left:var(--gutter); top:-100px; z-index:200;
+  background:var(--base-850); border:1px solid var(--accent); color:var(--ink-100);
+  padding:12px 16px; border-radius:var(--radius-control); min-height:44px; display:grid; place-items:center;
+}
+.skip:focus{ top:12px; }
+
+.eyebrow{ color:var(--ink-500); font-size:11px; line-height:1.25; letter-spacing:.12em; text-transform:uppercase; font-family:var(--mono); }
+
+/* severity / status: dot + label + colour. Never colour alone. */
+.dot{ width:7px; height:7px; border-radius:50%; display:inline-block; flex:0 0 auto; }
+.dot--accent{ background:var(--accent); }
+.dot--sol{ background:var(--mark-sol); }
+.dot--usdc{ background:var(--mark-usdc); }
+.dot--tail{ background:var(--mark-tail); }
+
+/* =========================== TOP BAR ==================================== */
+.topbar{
+  position:sticky; top:0; z-index:60;
+  background:rgba(7,8,10,.92);
+  border-bottom:1px solid var(--base-800);
+}
+@supports (backdrop-filter:blur(2px)){ .topbar{ backdrop-filter:saturate(1.2); } }
+.topbar-in{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  min-height:56px;
+}
+.brand{ display:flex; align-items:center; gap:10px; color:var(--ink-100); }
+.brand b{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; font-weight:600; }
+.brand span{ color:var(--ink-500); font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-family:var(--mono); }
+@media (max-width:620px){ .brand span{ display:none; } }
+.topbar-right{ display:flex; align-items:center; gap:10px; }
+
+.dna{
+  font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+  color:var(--ink-500); border:1px solid var(--base-700);
+  border-radius:3px; padding:5px 8px; white-space:nowrap;
+}
+@media (max-width:480px){ .dna{ font-size:9px; padding:4px 6px; letter-spacing:.1em; } }
+
+.btn{
+  font-family:var(--sans); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  min-height:44px; padding:0 18px; display:inline-flex; align-items:center; gap:9px;
+  background:var(--base-850); color:var(--ink-100);
+  border:1px solid var(--base-700); border-radius:var(--radius-control);
+  cursor:pointer; transition:border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
+}
+.btn:hover{ border-color:var(--base-600); }
+.btn:active{ transform:scale(.99); }
+.btn--primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+.btn--primary:hover{ background:#f6c274; border-color:#f6c274; }
+.btn--ghost{ background:transparent; }
+
+/* =========================== OVERLAY NAV ================================ */
+.overlay{
+  position:fixed; inset:0; z-index:150;
+  background:var(--base-950);
+  display:grid; grid-template-rows:auto 1fr auto;
+  overflow-y:auto;
+}
+.overlay[hidden]{ display:none; }
+.overlay-head{ border-bottom:1px solid var(--base-800); }
+.overlay-head .topbar-in{ min-height:56px; }
+.overlay-body{ padding-block:clamp(32px,7vh,72px); }
+.overlay-grid{ display:grid; grid-template-columns:repeat(12,1fr); gap:20px 20px; }
+.overlay-nav{ grid-column:1 / -1; display:flex; flex-direction:column; }
+.overlay-nav a{
+  display:flex; align-items:baseline; gap:16px;
+  padding:14px 0; min-height:44px;
+  border-bottom:1px solid var(--base-800);
+  font-size:clamp(22px,4.4vw,40px); line-height:1.1; letter-spacing:-0.02em; font-weight:600;
+  transition:color 150ms ease-out;
+}
+.overlay-nav a:hover{ color:var(--accent); }
+.overlay-nav a i{ font-style:normal; font-family:var(--mono); font-size:11px; color:var(--ink-500); letter-spacing:.12em; }
+.overlay-meta{ grid-column:1 / -1; }
+@media (min-width:900px){
+  .overlay-nav{ grid-column:1 / 8; }
+  .overlay-meta{ grid-column:9 / 13; }
+}
+.meta-row{ display:flex; justify-content:space-between; gap:14px; padding:9px 0; border-bottom:1px solid var(--base-800); font-size:12px; }
+.meta-row b{ color:var(--ink-100); font-weight:500; }
+.overlay-foot{ border-top:1px solid var(--base-800); padding-block:16px; color:var(--ink-500); font-size:11px; }
+
+/* =========================== HERO (immersive) ===========================
+   Mobile first the hero stacks: head, crowd, panels. From 900px the crowd
+   becomes a full-bleed background layer and the panels float ON it, which is
+   the Immersive gene — the countdown literally sits over the crowd.
+   ======================================================================== */
+.hero{ position:relative; display:grid; grid-template-rows:auto 1fr; min-height:calc(100svh - 56px); }
+.hero-head{ position:relative; z-index:3; padding-top:clamp(28px,5vh,56px); padding-bottom:20px; }
+.hero-head h1{ margin-top:14px; max-width:19ch; }
+.hero-head .t-lede{ margin-top:16px; max-width:56ch; color:var(--ink-300); }
+.hero-head .t-lede b{ color:var(--ink-100); font-weight:500; }
+
+.hero-body{ position:relative; display:grid; gap:18px; padding-bottom:24px; }
+
+/* the crowd layer */
+.crowd-layer{ display:flex; justify-content:center; overflow:hidden; }
+
+.plot{ position:relative; }
+.plot svg{ display:block; }
+.plot .hit{
+  position:absolute; top:0; padding:0; margin:0;
+  background:transparent; border:0; cursor:pointer; border-radius:2px;
+}
+.plot .hit:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+.crowd g.cl{ opacity:1; }
+.crowd.stagger g.cl{ opacity:0; transform:translateY(7px); }
+.crowd.stagger.ready g.cl{
+  opacity:1; transform:translateY(0);
+  transition:opacity 240ms var(--ease), transform 240ms var(--ease);
+  transition-delay:calc(var(--i) * 14ms);
+}
+.crowd.dim g.cl{ opacity:.26; transition:opacity 150ms ease-out; }
+.crowd.dim g.cl.hot{ opacity:1; }
+.crowd .rule{ stroke:var(--base-700); stroke-width:1; }
+.crowd .lab{ fill:var(--ink-500); font-family:var(--sans); font-size:10px; letter-spacing:.02em; }
+.crowd .lab-n{ fill:var(--ink-300); font-family:var(--mono); font-size:11px; }
+
+/* tooltip: anchored to the cluster, never to the pointer */
+.tip{
+  position:absolute; z-index:5; transform:translate(-50%,-100%);
+  background:var(--base-850); border:1px solid var(--base-600);
+  border-radius:var(--radius-control); padding:10px 12px; min-width:170px;
+  pointer-events:none; opacity:0; visibility:hidden;
+  transition:opacity 120ms ease-out;
+}
+.tip.on{ opacity:1; visibility:visible; }
+.tip .p{ color:var(--ink-100); font-size:12px; font-weight:600; letter-spacing:-0.01em; }
+.tip .v{ color:var(--ink-100); font-family:var(--mono); font-size:19px; line-height:1.2; font-variant-numeric:tabular-nums; margin-top:3px; }
+.tip .s{ color:var(--ink-500); font-size:11px; margin-top:2px; }
+.tip .a{ display:flex; align-items:center; gap:7px; margin-top:8px; padding-top:8px; border-top:1px solid var(--base-700); color:var(--ink-300); font-size:11px; }
+
+/* overlay panels floating ON the crowd */
+.hero-fg{ position:relative; z-index:3; display:grid; gap:14px; }
+.float{
+  background:var(--base-900); border:1px solid var(--base-700);
+  border-radius:var(--radius-card); padding:18px 20px;
+}
+.clock{ width:max-content; max-width:100%; }
+.clock .big{
+  color:var(--ink-100); font-family:var(--mono); font-variant-numeric:tabular-nums;
+  font-size:clamp(38px,7.6vw,66px); line-height:1; letter-spacing:-0.035em; display:block; margin-top:10px;
+}
+.clock .cap{ color:var(--ink-500); font-size:11px; margin-top:12px; font-family:var(--mono); letter-spacing:.04em; }
+.clock .hms{ color:var(--ink-500); font-family:var(--mono); font-size:10px; letter-spacing:.26em; margin-top:7px; }
+
+.state-card{ width:max-content; max-width:100%; min-width:min(300px,100%); }
+.state-row{ display:flex; align-items:center; justify-content:space-between; gap:20px; padding:7px 0; border-bottom:1px solid var(--base-800); }
+.state-row:last-child{ border-bottom:0; padding-bottom:0; }
+.state-row .k{ color:var(--ink-500); font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-family:var(--mono); }
+.state-row .v{ color:var(--ink-100); font-size:12px; display:flex; align-items:center; gap:8px; }
+
+.hero-top-row, .hero-bottom-row{ display:grid; gap:14px; }
+
+/* --- from 900px: the crowd goes behind, the panels float over it -------- */
+@media (min-width:900px){
+  .hero-body{ display:grid; min-height:min(58svh,520px); padding-bottom:0; }
+  .crowd-layer{ position:absolute; inset:0; z-index:1; align-items:center; padding:8px 24px 52px; }
+  .hero-fg{ grid-area:1 / 1; align-content:space-between; pointer-events:none; }
+  .hero-fg .float, .hero-fg .instrument{ pointer-events:auto; }
+  .hero-top-row{ grid-template-columns:auto 1fr; align-items:start; padding-top:4px; }
+  .hero-top-row .state-card{ justify-self:end; }
+  .hero-bottom-row{ grid-template-columns:1fr auto; align-items:end; padding-bottom:16px; }
+}
+
+/* legend + feed-state control */
+.instrument{
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px;
+  background:var(--base-900); border:1px solid var(--base-700);
+  border-radius:var(--radius-card); padding:10px 14px;
+}
+.legend{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+.legend i{ display:flex; align-items:center; gap:7px; font-style:normal; color:var(--ink-300); font-size:11px; }
+.legend .unit{ color:var(--ink-500); font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; }
+
+.seg{ display:flex; border:1px solid var(--base-700); border-radius:var(--radius-control); overflow:hidden; }
+.seg button{
+  min-height:44px; min-width:52px; padding:0 12px; cursor:pointer;
+  background:transparent; border:0; border-right:1px solid var(--base-800);
+  color:var(--ink-500); font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  transition:color 150ms ease-out, background-color 150ms ease-out;
+}
+.seg button:last-child{ border-right:0; }
+.seg button:hover{ color:var(--ink-300); }
+.seg button[aria-pressed="true"]{ background:var(--base-850); color:var(--ink-100); }
+.seg-label{ color:var(--ink-500); font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+
+/* non-live hero states, drawn in the crowd's own place */
+.stage-msg{ display:none; }
+.stage-msg.on{ display:flex; justify-content:center; }
+.msg{ max-width:440px; text-align:left; background:var(--base-900); border:1px solid var(--base-700); border-radius:var(--radius-card); padding:20px; }
+.msg h3{ margin-bottom:6px; }
+.msg p{ color:var(--ink-300); font-size:13px; }
+.msg .status{ display:flex; align-items:center; gap:8px; margin-bottom:12px; color:var(--ink-100); font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+.msg .acts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.skel-wrap{ display:none; }
+.skel-wrap.on{ display:flex; justify-content:center; overflow:hidden; }
+.skel rect{ fill:var(--base-800); }
+.skel .rule{ stroke:var(--base-700); stroke-width:1; }
+.skel-note{ color:var(--ink-500); font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; margin-top:12px; }
+@media (min-width:900px){
+  .stage-msg{ position:absolute; inset:0; z-index:2; align-items:center; padding:0 var(--gutter) 60px; }
+  .skel-wrap{ position:absolute; inset:0; z-index:1; align-items:center; padding:8px 24px 52px; }
+}
+
+.figcap{ color:var(--ink-500); font-size:11px; margin-top:10px; }
+.figcap a{ color:var(--ink-300); border-bottom:1px solid var(--base-600); }
+.figcap a:hover{ color:var(--accent); border-color:var(--accent); }
+
+/* =========================== SECTIONS / 12-COL GRID ===================== */
+.section{ border-top:1px solid var(--base-800); padding-block:clamp(40px,6vh,72px); scroll-margin-top:64px; }
+.sec-head{ display:grid; gap:10px; margin-bottom:24px; }
+.sec-head .t-read{ color:var(--ink-300); max-width:66ch; }
+@media (min-width:900px){
+  .sec-head{ grid-template-columns:1fr minmax(320px,44%); align-items:end; gap:10px 32px; }
+  .sec-head .mark{ grid-column:1; }
+  .sec-head h2{ grid-column:1; }
+  .sec-head .t-read{ grid-column:2; grid-row:1 / span 2; }
+}
+
+.bento{ display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+.card{
+  grid-column:1 / -1;
+  background:var(--base-900); border:1px solid var(--base-700);
+  border-radius:var(--radius-card); padding:18px;
+  display:flex; flex-direction:column; gap:14px;
+}
+.card > header{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
+.card h3{ color:var(--ink-100); }
+.card .hint{ color:var(--ink-500); font-size:11px; font-family:var(--mono); letter-spacing:.1em; text-transform:uppercase; }
+.card p{ font-size:13px; }
+@media (min-width:1024px){
+  .card{ padding:20px; }
+  .c-ledger { grid-column:1 / 8;  grid-row:1 / span 2; }
+  .c-oracle { grid-column:8 / 13; grid-row:1; }
+  .c-issuer { grid-column:8 / 13; grid-row:2; }
+  .c-session{ grid-column:1 / 6; }
+  .c-vol    { grid-column:6 / 10; }
+  .c-anchor { grid-column:10 / 13; }
+  .c-wide   { grid-column:1 / -1; }
+  .c-third  { grid-column:span 4; }
+}
+@media (min-width:640px) and (max-width:1023px){
+  .c-session{ grid-column:1 / 7; }
+  .c-vol    { grid-column:7 / 13; }
+}
+
+/* ledger table */
+.tbl-scroll{ overflow-x:auto; }
+.tbl{ font-size:12px; }
+.tbl th{
+  text-align:left; color:var(--ink-500); font-weight:500;
+  font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  padding:0 10px 8px 0; border-bottom:1px solid var(--base-700); white-space:nowrap;
+}
+.tbl th:first-child{ border-left:2px solid transparent; padding-left:8px; }
+.tbl td{ padding:7px 10px 7px 0; border-bottom:1px solid var(--base-800); color:var(--ink-300); vertical-align:middle; }
+.tbl td:first-child{ border-left:2px solid transparent; padding-left:8px; }
+.tbl tr:last-child td{ border-bottom:0; }
+.tbl .num{ text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink-100); white-space:nowrap; }
+.tbl .pool{ color:var(--ink-100); white-space:nowrap; }
+.tbl .pool sup{ color:var(--ink-500); font-family:var(--mono); font-size:9px; }
+.tbl .anchor{ display:flex; align-items:center; gap:8px; white-space:nowrap; font-size:11px; }
+.tbl tfoot td{ border-top:1px solid var(--base-700); border-bottom:0; padding-top:9px; color:var(--ink-100); font-weight:500; }
+.tbl tr.linked td{ background:var(--base-850); }
+.tbl tr.linked td:first-child{ border-left-color:var(--accent); }
+@media (max-width:559px){ .tbl .hide-s{ display:none; } }
+
+/* figure blocks inside cards */
+.kv{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:7px 0; border-bottom:1px solid var(--base-800); font-size:12px; }
+.kv:last-of-type{ border-bottom:0; }
+.kv dt{ color:var(--ink-500); }
+.kv dd{ margin:0; color:var(--ink-100); font-family:var(--mono); font-variant-numeric:tabular-nums; }
+dl{ margin:0; }
+
+.units{ display:grid; grid-template-columns:repeat(20,1fr); gap:3px; }
+.units span{ aspect-ratio:1; border-radius:1px; display:block; }
+.u-closed{ background:var(--accent); }
+.u-ext{ background:var(--mark-sol); }
+.u-reg{ background:var(--mark-tail); }
+
+.bar{ display:grid; gap:6px; }
+.bar .top{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; font-size:12px; }
+.bar .top b{ color:var(--ink-100); font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:500; font-size:14px; }
+.bar .track{ height:10px; background:var(--base-800); border-radius:2px; overflow:hidden; }
+.bar .fill{ height:100%; display:block; border-radius:2px; }
+.bar .fill--a{ background:var(--accent); }
+.bar .fill--g{ background:var(--mark-sol); }
+
+.big-stat{ color:var(--ink-100); font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:clamp(30px,4.4vw,42px); line-height:1; letter-spacing:-0.03em; }
+
+/* steps */
+.steps{ display:grid; grid-template-columns:repeat(12,1fr); gap:14px; }
+.step{ grid-column:1 / -1; border-top:1px solid var(--base-700); padding-top:12px; }
+@media (min-width:768px){ .step{ grid-column:span 3; } }
+.step .ix{ color:var(--accent); font-family:var(--mono); font-size:11px; letter-spacing:.14em; }
+.step h3{ margin:8px 0 6px; }
+.step p{ color:var(--ink-300); font-size:12.5px; }
+
+.cta-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+
+/* footer */
+.foot{ border-top:1px solid var(--base-800); padding-block:28px 40px; color:var(--ink-500); font-size:11px; }
+.foot-grid{ display:grid; grid-template-columns:repeat(12,1fr); gap:16px; }
+.foot-col{ grid-column:1 / -1; }
+@media (min-width:900px){
+  .foot-col.a{ grid-column:1 / 6; }
+  .foot-col.b{ grid-column:6 / 10; }
+  .foot-col.c{ grid-column:10 / 13; }
+}
+.foot b{ color:var(--ink-300); font-weight:500; display:block; margin-bottom:6px; letter-spacing:.1em; text-transform:uppercase; font-family:var(--mono); font-size:10px; }
+.foot p{ font-size:11px; line-height:1.6; }
+
+/* ---- reduced motion: nothing moves, the crowd renders complete --------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; transition-delay:0ms !important; }
+  .crowd.stagger g.cl{ opacity:1 !important; transform:none !important; }
+  .btn:active{ transform:none; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <div class="brand">
+      <span class="dot dot--accent" aria-hidden="true"></span>
+      <b>Closing&nbsp;Bell</b>
+      <span>The Crowd</span>
+    </div>
+    <div class="topbar-right">
+      <p class="dna" aria-label="Design DNA: Grid, Overlay nav, Immersive hero, Neutral, Sans">DNA-G-O-I-N-S</p>
+      <button class="btn btn--ghost" id="navOpen" aria-expanded="false" aria-controls="overlay">Index</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================ OVERLAY NAV ============================= -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="ovTitle" hidden>
+  <div class="overlay-head">
+    <div class="wrap topbar-in">
+      <div class="brand">
+        <span class="dot dot--accent" aria-hidden="true"></span>
+        <b id="ovTitle">Index</b>
+      </div>
+      <button class="btn" id="navClose">Close <span aria-hidden="true">&times;</span></button>
+    </div>
+  </div>
+  <div class="overlay-body">
+    <div class="wrap overlay-grid">
+      <nav class="overlay-nav" aria-label="Sections">
+        <a href="#crowd" data-nav><i>01</i> The crowd</a>
+        <a href="#ledger" data-nav><i>02</i> The ledger</a>
+        <a href="#clock" data-nav><i>03</i> The clock</a>
+        <a href="#exit" data-nav><i>04</i> The exit</a>
+        <a href="#method" data-nav><i>05</i> Method &amp; states</a>
+      </nav>
+      <div class="overlay-meta">
+        <p class="eyebrow" style="margin-bottom:10px">State at capture</p>
+        <div class="meta-row"><span>Exposed positions</span><b class="n">2,777</b></div>
+        <div class="meta-row"><span>Pools</span><b class="n">76</b></div>
+        <div class="meta-row"><span>Pool liquidity covered</span><b class="n">$16.2M</b></div>
+        <div class="meta-row"><span>Market</span><b>Closed</b></div>
+        <div class="meta-row"><span>Until a price exists</span><b class="n">41h</b></div>
+        <div class="meta-row"><span>Pyth SPY, frozen</span><b class="n">$762.96</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="overlay-foot">
+    <div class="wrap">Escape closes this panel and returns focus to the Index control.</div>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- =============================== HERO ================================= -->
+<section class="hero" id="crowd" aria-labelledby="heroTitle">
+
+  <div class="wrap hero-head">
+    <p class="eyebrow">01 / The crowd &middot; measured at capture</p>
+    <h1 id="heroTitle"><span class="n">2,777</span> positions are standing in the dark.</h1>
+    <p class="t-lede">Every mark below is one live liquidity position in a tokenized-equity pool, drawn in the pool it actually sits in. The US market is <b>closed</b>. For the next <b class="n">41</b> hours nobody can price what any of them are holding &mdash; and the issuer will not create or redeem.</p>
+  </div>
+
+  <div class="hero-body" id="heroBody">
+
+    <!-- background layer: the crowd -->
+    <div class="crowd-layer" id="crowdLayer">
+      <figure class="plot" id="plot" style="margin:0">
+        <div id="plotMount"></div>
+      </figure>
+    </div>
+
+    <!-- cluster readout: a sibling of the panels so it is never clipped -->
+    <div class="tip" id="tip" aria-hidden="true"></div>
+
+    <!-- loading skeleton, in the crowd's own geometry -->
+    <div class="skel-wrap" id="skelWrap">
+      <div>
+        <div id="skelMount"></div>
+        <p class="skel-note" role="status">Resolving positions &mdash; pool <span class="n">41</span> of <span class="n">76</span></p>
+      </div>
+    </div>
+
+    <!-- empty / error, drawn in the crowd's place -->
+    <div class="stage-msg" id="msgEmpty">
+      <div class="msg">
+        <p class="status"><span class="dot dot--tail" aria-hidden="true"></span> Empty &middot; nothing exposed</p>
+        <h3>No position of yours is standing in the dark.</h3>
+        <p>The indexer resolved your wallet and found no liquidity in a pool whose underlying is unpriceable right now. Nothing to exit.</p>
+        <div class="acts">
+          <button class="btn btn--primary" type="button">Watch for the next close</button>
+          <button class="btn" type="button" data-state="live">Back to the crowd</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-msg" id="msgError">
+      <div class="msg">
+        <p class="status"><span class="dot dot--accent" aria-hidden="true"></span> Error &middot; feed unavailable</p>
+        <h3>The pool indexer did not answer.</h3>
+        <p>Positions across <span class="n">76</span> pools could not be read, and the Pyth account for <span class="n">Equity.US.SPY/USD</span> returned no update. The crowd shown last resolved <span class="n">4</span> minutes ago and is not live. Nothing was signed and nothing was moved.</p>
+        <div class="acts">
+          <button class="btn btn--primary" type="button" data-state="live">Retry the read</button>
+          <button class="btn" type="button" data-state="live">Use the last good snapshot</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- foreground: panels floating over the crowd -->
+    <div class="wrap hero-fg">
+
+      <div class="hero-top-row">
+        <div class="float clock">
+          <p class="eyebrow">Until anyone can price them</p>
+          <strong class="big" id="clockVal" aria-hidden="true">41:00:00</strong>
+          <p class="sr" id="clockSr">41 hours until the next price.</p>
+          <p class="hms" aria-hidden="true">HOURS&nbsp;&nbsp;MINUTES&nbsp;&nbsp;SECONDS</p>
+          <p class="cap">Measured <span class="n">41h 00m</span> at capture<br>Pyth resumes Mon <span class="n">13:30</span> UTC</p>
+        </div>
+
+        <div class="float state-card">
+          <div class="state-row">
+            <span class="k">Market</span>
+            <span class="v"><span class="dot dot--accent" aria-hidden="true"></span> Closed</span>
+          </div>
+          <div class="state-row">
+            <span class="k">Pyth SPY/USD</span>
+            <span class="v n">$762.96</span>
+          </div>
+          <div class="state-row">
+            <span class="k">Publish age</span>
+            <span class="v n">19h</span>
+          </div>
+          <div class="state-row">
+            <span class="k">Create / redeem</span>
+            <span class="v"><span class="dot dot--accent" aria-hidden="true"></span> Off &middot; <span class="n">max $0</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-bottom-row">
+        <div class="instrument">
+          <span class="legend unit">1 mark = 1 position</span>
+          <div class="legend">
+            <i><span class="dot dot--usdc" aria-hidden="true"></span> Stable quote</i>
+            <i><span class="dot dot--sol" aria-hidden="true"></span> Volatile quote</i>
+            <i><span class="dot dot--accent" aria-hidden="true"></span> No priceable leg</i>
+            <i><span class="dot dot--tail" aria-hidden="true"></span> Tail, not broken out</i>
+          </div>
+        </div>
+        <div class="instrument" role="group" aria-label="Feed state, demonstration control">
+          <span class="seg-label">Feed state</span>
+          <div class="seg" id="seg">
+            <button type="button" data-state="live" aria-pressed="true">Live</button>
+            <button type="button" data-state="loading" aria-pressed="false">Loading</button>
+            <button type="button" data-state="empty" aria-pressed="false">Empty</button>
+            <button type="button" data-state="error" aria-pressed="false">Error</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /hero-fg -->
+  </div><!-- /hero-body -->
+</section>
+
+<!-- ============================== LEDGER ================================ -->
+<section class="section" id="ledger" aria-labelledby="ledgerTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mark">02 / The ledger</p>
+      <h2 id="ledgerTitle"><span class="n">2,777</span> positions, pool by pool</h2>
+      <p class="t-read">This table is the crowd, as data. It is the text alternative for the chart above and it is present in the markup without JavaScript, so it survives a script failure. Every row is a distinct pool: the same pair appears more than once because separate pools exist for it, and counts are never merged across them.</p>
+    </div>
+
+    <div class="bento">
+
+      <!-- LEDGER -->
+      <div class="card c-ledger">
+        <header>
+          <h3>Exposed positions by pool</h3>
+          <span class="hint"><span class="n">19</span> blocks &middot; <span class="n">76</span> pools</span>
+        </header>
+        <div class="tbl-scroll">
+          <table class="tbl" id="ledgerTable">
+            <caption class="sr">Exposed liquidity positions by pool, with each pool's share of the 2,777 total and the class of price anchor available to it.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Pool</th>
+                <th scope="col" class="num">Positions</th>
+                <th scope="col" class="num hide-s">Share</th>
+                <th scope="col" class="hide-s">Price anchor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-pool="0"><td class="pool">SPYx/USDC</td><td class="num">660</td><td class="num hide-s">23.77%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="1"><td class="pool">SPYx/SOL</td><td class="num">386</td><td class="num hide-s">13.90%</td><td class="hide-s"><span class="anchor"><span class="dot dot--sol"></span>Volatile quote</span></td></tr>
+              <tr data-pool="2"><td class="pool">QQQx/USDC</td><td class="num">375</td><td class="num hide-s">13.50%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="3"><td class="pool">SPYx/USDC<sup>&nbsp;2</sup></td><td class="num">200</td><td class="num hide-s">7.20%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="4"><td class="pool">SPYx/USDC<sup>&nbsp;3</sup></td><td class="num">191</td><td class="num hide-s">6.88%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="5"><td class="pool">AAPLx/USDC</td><td class="num">179</td><td class="num hide-s">6.45%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="6"><td class="pool">QQQx/SOL</td><td class="num">156</td><td class="num hide-s">5.62%</td><td class="hide-s"><span class="anchor"><span class="dot dot--sol"></span>Volatile quote</span></td></tr>
+              <tr data-pool="7"><td class="pool">MCDx/USDC</td><td class="num">142</td><td class="num hide-s">5.11%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="8"><td class="pool">STONK/SPYx</td><td class="num">111</td><td class="num hide-s">4.00%</td><td class="hide-s"><span class="anchor"><span class="dot dot--accent"></span>No priceable leg</span></td></tr>
+              <tr data-pool="9"><td class="pool">STRCx/USDC</td><td class="num">89</td><td class="num hide-s">3.20%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="10"><td class="pool">STRCx/USDC<sup>&nbsp;2</sup></td><td class="num">50</td><td class="num hide-s">1.80%</td><td class="hide-s"><span class="anchor"><span class="dot dot--usdc"></span>Stable quote</span></td></tr>
+              <tr data-pool="11"><td class="pool">KOx/SOL</td><td class="num">17</td><td class="num hide-s">0.61%</td><td class="hide-s"><span class="anchor"><span class="dot dot--sol"></span>Volatile quote</span></td></tr>
+              <tr data-pool="12"><td class="pool">FRIES/MCDx</td><td class="num">9</td><td class="num hide-s">0.32%</td><td class="hide-s"><span class="anchor"><span class="dot dot--accent"></span>No priceable leg</span></td></tr>
+              <tr data-pool="13"><td class="pool">STRCx/SOL</td><td class="num">4</td><td class="num hide-s">0.14%</td><td class="hide-s"><span class="anchor"><span class="dot dot--sol"></span>Volatile quote</span></td></tr>
+              <tr data-pool="14"><td class="pool">TREE/AAPLx</td><td class="num">3</td><td class="num hide-s">0.11%</td><td class="hide-s"><span class="anchor"><span class="dot dot--accent"></span>No priceable leg</span></td></tr>
+              <tr data-pool="15"><td class="pool">QQQx/ETHICS</td><td class="num">2</td><td class="num hide-s">0.07%</td><td class="hide-s"><span class="anchor"><span class="dot dot--accent"></span>No priceable leg</span></td></tr>
+              <tr data-pool="16"><td class="pool">STRCx/MSFTx</td><td class="num">2</td><td class="num hide-s">0.07%</td><td class="hide-s"><span class="anchor"><span class="dot dot--accent"></span>No priceable leg</span></td></tr>
+              <tr data-pool="17"><td class="pool">FRIES/MCDx<sup>&nbsp;2</sup></td><td class="num">2</td><td class="num hide-s">0.07%</td><td class="hide-s"><span class="anchor"><span class="dot dot--accent"></span>No priceable leg</span></td></tr>
+              <tr data-pool="18"><td class="pool">58 smaller pools</td><td class="num">199</td><td class="num hide-s">7.17%</td><td class="hide-s"><span class="anchor"><span class="dot dot--tail"></span>Not broken out</span></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td class="pool">Total</td><td class="num">2,777</td><td class="num hide-s">100%</td><td class="hide-s">&mdash;</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="figcap">The <span class="n">18</span> largest pools are listed individually. The remaining <span class="n">199</span> positions sit across <span class="n">58</span> smaller pools and are drawn as one block; their quote assets are not broken out here, so that block carries no anchor class.</p>
+      </div>
+
+      <!-- ORACLE -->
+      <div class="card c-oracle">
+        <header>
+          <h3>The price everyone is quoting</h3>
+          <span class="hint">Pyth</span>
+        </header>
+        <p>Pools price the equity leg off a feed that stopped updating when the session did. The number is not wrong; it is simply <em>old</em>, and it will stay exactly this old for the rest of the window.</p>
+        <dl>
+          <div class="kv"><dt>Feed</dt><dd>Equity.US.SPY/USD</dd></div>
+          <div class="kv"><dt>Published price</dt><dd>$762.96</dd></div>
+          <div class="kv"><dt>Age at capture</dt><dd>19h</dd></div>
+          <div class="kv"><dt>Next update</dt><dd>Mon 13:30 UTC</dd></div>
+        </dl>
+        <p class="figcap">Anything that happens to the underlying between those two moments is invisible to every pool on this page.</p>
+      </div>
+
+      <!-- ISSUER -->
+      <div class="card c-issuer">
+        <header>
+          <h3>The exit the issuer closed</h3>
+          <span class="hint">Create / redeem</span>
+        </header>
+        <p>While the market is shut the issuer sets <span class="n">maxOrderFiatValue</span> to <span class="n">0</span>. Creation and redemption are off, so the arbitrage that would normally drag a stale pool price back to fair value cannot run.</p>
+        <dl>
+          <div class="kv"><dt>maxOrderFiatValue</dt><dd>0</dd></div>
+          <div class="kv"><dt>Creation</dt><dd>Off</dd></div>
+          <div class="kv"><dt>Redemption</dt><dd>Off</dd></div>
+        </dl>
+        <p class="figcap">A stale price with no arbitrage path is not a quote. It is a standing offer at yesterday&rsquo;s number.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- =============================== CLOCK ================================ -->
+<section class="section" id="clock" aria-labelledby="clockTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mark">03 / The clock</p>
+      <h2 id="clockTitle">The volume does not wait for the bell</h2>
+      <p class="t-read">If trading stopped when pricing stopped, the window would be harmless. It does not. Most of the volume in these pools arrives when the underlying has no live price, and the hours nobody can price are the more volatile ones.</p>
+    </div>
+
+    <div class="bento">
+
+      <div class="card c-session">
+        <header>
+          <h3>When volume actually arrives</h3>
+          <span class="hint">1 square = 1%</span>
+        </header>
+        <div class="units" id="units" aria-hidden="true"></div>
+        <div class="legend" style="gap:8px 18px">
+          <i><span class="dot dot--accent"></span> Fully closed &middot; <span class="n">36.3%</span></i>
+          <i><span class="dot dot--sol"></span> Extended hours &middot; <span class="n">34.6%</span></i>
+          <i><span class="dot dot--tail"></span> Regular session &middot; <span class="n">29.1%</span></i>
+        </div>
+        <p><span class="n">70.9%</span> of volume arrives outside the regular session, and <span class="n">36.3%</span> of it while the market is fully closed &mdash; the exact hours in which the feed above is frozen.</p>
+        <p class="figcap">Squares are rounded to whole percent (<span class="n">36</span> / <span class="n">35</span> / <span class="n">29</span>); the figures in the legend are the measured values.</p>
+      </div>
+
+      <div class="card c-vol">
+        <header>
+          <h3>Volatility, by hour</h3>
+          <span class="hint">Hourly, measured</span>
+        </header>
+        <div class="bar">
+          <div class="top"><span>Weekend &middot; unpriceable</span><b class="n">0.689%</b></div>
+          <div class="track"><span class="fill fill--a" style="width:98.4%"></span></div>
+        </div>
+        <div class="bar">
+          <div class="top"><span>Market hours &middot; priced</span><b class="n">0.570%</b></div>
+          <div class="track"><span class="fill fill--g" style="width:81.4%"></span></div>
+        </div>
+        <p>Hourly volatility over the weekend <em>exceeds</em> hourly volatility during market hours by <span class="n">0.119</span> percentage points, or <span class="n">20.9%</span> in relative terms. The risk is not paused. Only the ability to price it is.</p>
+      </div>
+
+      <div class="card c-anchor">
+        <header><h3>No leg to stand on</h3></header>
+        <p class="big-stat">129</p>
+        <p>positions sit in pools where <em>neither</em> side has a price: equity against equity, or equity against a memecoin. <span class="n">111</span> of them are in one pool.</p>
+        <p class="figcap">The deepest pool in the set is STONK/SPYx, a memecoin pair. People also provide to MCDx/FRIES, KOx/COKE and AAPLx/TREE. Nobody holds these as equity exposure &mdash; but the equity leg still freezes.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================================ EXIT ================================ -->
+<section class="section" id="exit" aria-labelledby="exitTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mark">04 / The exit</p>
+      <h2 id="exitTitle">You sign it. Nobody else touches the position.</h2>
+      <p class="t-read">Closing Bell is a warning system with one button on the end of it. It watches the session clock against your open liquidity, tells you what is about to sit through unpriceable hours, and builds the exit transaction for you to sign yourself.</p>
+    </div>
+
+    <div class="bento">
+      <div class="card c-wide">
+        <div class="steps">
+          <div class="step">
+            <p class="ix">01 &mdash; Watch</p>
+            <h3>Read the position, read the clock</h3>
+            <p>Your open liquidity is resolved pool by pool, and each underlying is matched against its real session calendar rather than a generic one.</p>
+          </div>
+          <div class="step">
+            <p class="ix">02 &mdash; Warn</p>
+            <h3>Before the bell, not after</h3>
+            <p>At <span class="n">T&minus;60</span> minutes you are told which positions are about to spend hours in a pool whose price cannot move to meet reality.</p>
+          </div>
+          <div class="step">
+            <p class="ix">03 &mdash; Sign</p>
+            <h3>The transaction is yours</h3>
+            <p>The exit is simulated, shown to you in full, and signed by your wallet. No keeper approval, no delegated withdrawal, no custody at any point.</p>
+          </div>
+          <div class="step">
+            <p class="ix">04 &mdash; Clear</p>
+            <h3>Out, or in on purpose</h3>
+            <p>You leave before the bell, or you stay knowing exactly what you are staying in. Both are decisions. Neither is an accident.</p>
+          </div>
+        </div>
+        <div class="cta-row" style="margin-top:6px">
+          <button class="btn btn--primary" type="button">Watch my positions</button>
+          <a class="btn" href="#method">Read the method</a>
+          <span class="figcap" style="margin:0">Non-custodial. The protocol never holds a key and never moves a position on its own.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== METHOD =============================== -->
+<section class="section" id="method" aria-labelledby="methodTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mark">05 / Method &amp; states</p>
+      <h2 id="methodTitle">Where every number came from</h2>
+      <p class="t-read">No figure on this page is illustrative. Each one is read back from a measurement or a live feed, and anything derived is labelled as derived.</p>
+    </div>
+
+    <div class="bento">
+      <div class="card c-third">
+        <header><h3>Provenance</h3></header>
+        <p>Position counts are per-pool reads at a single capture while the US equity session was closed: <span class="n">2,777</span> positions across <span class="n">76</span> pools, <span class="n">$16.2M</span> of pool liquidity covered. Session-volume and volatility splits are measured over the same sample. The Pyth price, its publish age and the issuer&rsquo;s <span class="n">maxOrderFiatValue</span> are live account reads.</p>
+        <p class="figcap">Derived, and marked as such: the <span class="n">199</span>-position tail (total minus the <span class="n">18</span> listed pools), the <span class="n">34.6%</span> extended-hours share (<span class="n">70.9</span> minus <span class="n">36.3</span>), and the <span class="n">20.9%</span> relative volatility gap.</p>
+      </div>
+
+      <div class="card c-third">
+        <header><h3>How the crowd is drawn</h3></header>
+        <p>One mark per position, packed into columns inside its own pool block, blocks ordered by size and hung from one shared rule. No physics, no randomness, no pointer tracking &mdash; the same input always draws the same picture.</p>
+        <p class="figcap">On narrow screens nothing is dropped or aggregated: the row count rises from <span class="n">34</span> to <span class="n">64</span>, which re-flows the identical <span class="n">2,777</span> marks into a taller, narrower crowd. Per-block labels are withdrawn below <span class="n">640px</span>, where they would be sub-pixel, and replaced by tap and the ledger.</p>
+      </div>
+
+      <div class="card c-third">
+        <header><h3>States &amp; access</h3></header>
+        <p>Four feed states ship, and all four can be seen in place using the control in the hero: live, loading, empty and error. Loading draws the real cluster geometry as flat blocks with a determinate count, never a spinner and never a shimmer.</p>
+        <p class="figcap">The chart is one tab stop; arrow keys move between blocks and Enter jumps to that pool&rsquo;s ledger row. Severity is always a dot, a label and a colour together. Controls are <span class="n">44px</span>. Under <span class="n">prefers-reduced-motion</span> the crowd renders complete and still.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="foot-col a">
+      <b>Closing Bell</b>
+      <p>A warning system for tokenized-equity liquidity providers. Most tokenized stock trades when nobody can price it; this tells you when you are one of them, and hands you an exit you sign yourself.</p>
+    </div>
+    <div class="foot-col b">
+      <b>Reference points</b>
+      <p><strong style="color:var(--ink-300);font-weight:500">Stripe Dashboard</strong> &mdash; calm authority, immaculate density, colour used only where it carries meaning.<br>
+      <strong style="color:var(--ink-300);font-weight:500">Our World in Data</strong> &mdash; every mark is a real observation, and the visualisation is the argument rather than the decoration.</p>
+    </div>
+    <div class="foot-col c">
+      <b>This document</b>
+      <p>Design proposal 3 of 3 &mdash; &ldquo;The Crowd&rdquo;.<br>DNA-G-O-I-N-S: Grid, Overlay nav, Immersive hero, Neutral palette, Sans typography.<br>Static prototype. Figures are real; the wallet flows are not wired.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------------
+     DATA — 2,777 positions across 76 pools. The 18 largest pools are
+     individual; the 199-position tail across 58 smaller pools is one block.
+     Duplicate pairs are genuinely separate pools and are never merged.
+     --------------------------------------------------------------------- */
+  var POOLS = [
+    { pair:'SPYx/USDC',      n:660, t:'usdc', dup:0 },
+    { pair:'SPYx/SOL',       n:386, t:'sol',  dup:0 },
+    { pair:'QQQx/USDC',      n:375, t:'usdc', dup:0 },
+    { pair:'SPYx/USDC',      n:200, t:'usdc', dup:2 },
+    { pair:'SPYx/USDC',      n:191, t:'usdc', dup:3 },
+    { pair:'AAPLx/USDC',     n:179, t:'usdc', dup:0 },
+    { pair:'QQQx/SOL',       n:156, t:'sol',  dup:0 },
+    { pair:'MCDx/USDC',      n:142, t:'usdc', dup:0 },
+    { pair:'STONK/SPYx',     n:111, t:'none', dup:0 },
+    { pair:'STRCx/USDC',     n:89,  t:'usdc', dup:0 },
+    { pair:'STRCx/USDC',     n:50,  t:'usdc', dup:2 },
+    { pair:'KOx/SOL',        n:17,  t:'sol',  dup:0 },
+    { pair:'FRIES/MCDx',     n:9,   t:'none', dup:0 },
+    { pair:'STRCx/SOL',      n:4,   t:'sol',  dup:0 },
+    { pair:'TREE/AAPLx',     n:3,   t:'none', dup:0 },
+    { pair:'QQQx/ETHICS',    n:2,   t:'none', dup:0 },
+    { pair:'STRCx/MSFTx',    n:2,   t:'none', dup:0 },
+    { pair:'FRIES/MCDx',     n:2,   t:'none', dup:2 },
+    { pair:'58 smaller pools', n:199, t:'tail', dup:0, short:'58 pools' }
+  ];
+  var TOTAL = 2777;
+
+  var TIER = {
+    usdc: { fill:'var(--mark-usdc)', label:'Stable quote, one frozen leg' },
+    sol:  { fill:'var(--mark-sol)',  label:'Volatile quote against a frozen leg' },
+    none: { fill:'var(--mark-none)', label:'No priceable leg on either side' },
+    tail: { fill:'var(--mark-tail)', label:'Tail pools, quote not broken out' }
+  };
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  /* ---------------------------------------------------------------------
+     CROWD LAYOUT — deterministic. Row count comes from the breakpoint, cell
+     size is derived from the measured width, so 1 mark = 1 position always
+     and the chart can never overflow its container.
+     --------------------------------------------------------------------- */
+  function pickLayout(w, vh) {
+    var rows, gapCols, labels;
+    if (w >= 900)      { rows = 34; gapCols = 2; labels = true; }
+    else if (w >= 640) { rows = 44; gapCols = 2; labels = true; }
+    else if (w >= 460) { rows = 52; gapCols = 1; labels = false; }
+    else               { rows = 64; gapCols = 1; labels = false; }
+
+    var widths = POOLS.map(function (p) { return Math.ceil(p.n / rows); });
+    var cols = widths.reduce(function (a, b) { return a + b; }, 0) + gapCols * (POOLS.length - 1);
+
+    /* the hero overlays the crowd from 900px up, so it gets the tighter height
+       budget; below that the hero stacks and the crowd can afford to be taller */
+    var maxH = w >= 900
+      ? Math.max(150, Math.min(340, Math.round(vh * 0.36)))
+      : Math.max(160, Math.min(360, Math.round(vh * 0.42)));
+    var cell = Math.floor(w / cols);
+    cell = Math.min(cell, Math.floor(maxH / rows));
+    cell = Math.max(2, Math.min(cell, 10));
+
+    var gapPx = cell >= 6 ? 2 : 1;
+    var labelH = labels ? 30 : 0;
+
+    return {
+      rows: rows, gapCols: gapCols, cell: cell, widths: widths,
+      dot: Math.max(1, cell - gapPx), labels: labels, labelH: labelH,
+      plotW: cols * cell, plotH: rows * cell, key: [w, rows, cell, gapCols, labels].join('|')
+    };
+  }
+
+  function blockPath(n, rows, cell, dot) {
+    var d = '', i, col, row, x, y;
+    for (i = 0; i < n; i++) {
+      col = (i / rows) | 0;
+      row = i % rows;
+      x = col * cell;
+      y = row * cell;
+      d += 'M' + x + ' ' + y + 'h' + dot + 'v' + dot + 'h-' + dot + 'z';
+    }
+    return d;
+  }
+
+  var mount = $('#plotMount');
+  var plot = $('#plot');
+  var tip = $('#tip');
+  var layerEl = $('#crowdLayer');
+  var hostEl = $('#heroBody');
+  var lastKey = '';
+  var firstDraw = true;
+  var geom = [];
+
+  function drawCrowd() {
+    /* measure the real content box so the chart can never overflow its layer */
+    var cs = window.getComputedStyle(layerEl);
+    var pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    var w = Math.max(240, layerEl.clientWidth - pad - 8);
+    var L = pickLayout(w, window.innerHeight || 800);
+    if (L.key === lastKey) return;
+    lastKey = L.key;
+
+    var svgH = L.labelH + L.plotH + 1;
+    var s = '<svg class="crowd' + (firstDraw && !reduced.matches ? ' stagger' : '') + '" width="' + L.plotW +
+            '" height="' + svgH + '" viewBox="0 0 ' + L.plotW + ' ' + svgH +
+            '" shape-rendering="crispEdges" aria-hidden="true" focusable="false">';
+
+    var x = 0, i, p, bw;
+    geom = [];
+    for (i = 0; i < POOLS.length; i++) {
+      p = POOLS[i];
+      bw = L.widths[i] * L.cell;
+      geom.push({ i: i, x: x, w: bw, p: p });
+
+      s += '<g class="cl" style="--i:' + i + '" fill="' + TIER[p.t].fill + '" transform="translate(' + x + ',0)">';
+      /* a block is labelled only when the label fits inside the block plus its
+         own gutter, so two neighbours can never collide */
+      if (L.labels) {
+        var txt = (p.short || p.pair) + (p.dup ? ' ·' + p.dup : '');
+        if (txt.length * 5.4 <= bw + L.gapCols * L.cell) {
+          s += '<text class="lab" x="' + (bw / 2) + '" y="' + (L.labelH - 18) + '" text-anchor="middle">' + txt + '</text>';
+          s += '<text class="lab-n" x="' + (bw / 2) + '" y="' + (L.labelH - 6) + '" text-anchor="middle">' + p.n + '</text>';
+        }
+      }
+      s += '<line class="rule" x1="0" y1="' + (L.labelH + 0.5) + '" x2="' + bw + '" y2="' + (L.labelH + 0.5) + '"/>';
+      s += '<path transform="translate(0,' + (L.labelH + 2) + ')" d="' + blockPath(p.n, L.rows, L.cell, L.dot) + '"/>';
+      s += '</g>';
+
+      x += bw + L.gapCols * L.cell;
+    }
+    s += '</svg>';
+
+    mount.innerHTML = s;
+    plot.style.width = L.plotW + 'px';
+
+    /* interaction layer: HTML buttons over the SVG, roving tabindex */
+    $$('.hit', plot).forEach(function (b) { b.remove(); });
+    geom.forEach(function (g, idx) {
+      var b = document.createElement('button');
+      b.className = 'hit';
+      b.type = 'button';
+      b.tabIndex = idx === 0 ? 0 : -1;
+      b.style.left = g.x + 'px';
+      b.style.width = g.w + 'px';
+      b.style.height = (L.labelH + L.plotH) + 'px';
+      b.setAttribute('aria-label',
+        g.p.pair + (g.p.dup ? ' pool ' + g.p.dup : '') + ', ' + g.p.n +
+        ' positions, ' + (g.p.n / TOTAL * 100).toFixed(2) + ' percent. ' + TIER[g.p.t].label +
+        '. Press Enter to open this pool in the ledger.');
+      b.dataset.idx = String(idx);
+      plot.appendChild(b);
+    });
+
+    var svg = $('svg', mount);
+    if (firstDraw && !reduced.matches) {
+      requestAnimationFrame(function () { requestAnimationFrame(function () { svg.classList.add('ready'); }); });
+    }
+    firstDraw = false;
+    drawSkeleton(L);
+  }
+
+  /* loading skeleton — the real cluster geometry, drawn flat */
+  function drawSkeleton(L) {
+    var s = '<svg class="skel" width="' + L.plotW + '" height="' + (L.labelH + L.plotH + 1) +
+            '" viewBox="0 0 ' + L.plotW + ' ' + (L.labelH + L.plotH + 1) + '" aria-hidden="true" focusable="false">';
+    var x = 0, i, bw;
+    for (i = 0; i < POOLS.length; i++) {
+      bw = L.widths[i] * L.cell;
+      s += '<line class="rule" x1="' + x + '" y1="' + (L.labelH + 0.5) + '" x2="' + (x + bw) + '" y2="' + (L.labelH + 0.5) + '"/>';
+      s += '<rect x="' + x + '" y="' + (L.labelH + 2) + '" width="' + bw + '" height="' + L.plotH + '" opacity="' + (i % 2 ? 0.75 : 1) + '"/>';
+      x += bw + L.gapCols * L.cell;
+    }
+    s += '</svg>';
+    $('#skelMount').innerHTML = s;
+  }
+
+  /* --------------------------- tooltip + focus ------------------------- */
+  var crowdRoot = function () { return $('svg.crowd', mount); };
+
+  function showTip(idx) {
+    var g = geom[idx];
+    if (!g) return;
+    var root = crowdRoot();
+    if (root) {
+      root.classList.add('dim');
+      $$('g.cl', root).forEach(function (n, k) { n.classList.toggle('hot', k === idx); });
+    }
+    tip.innerHTML =
+      '<p class="p">' + g.p.pair + (g.p.dup ? ' <span style="color:var(--ink-500)">pool ' + g.p.dup + '</span>' : '') + '</p>' +
+      '<p class="v">' + g.p.n + '</p>' +
+      '<p class="s">positions &middot; ' + (g.p.n / TOTAL * 100).toFixed(2) + '% of the crowd</p>' +
+      '<p class="a"><span class="dot" style="background:' + TIER[g.p.t].fill + '"></span>' + TIER[g.p.t].label + '</p>';
+
+    /* anchored to the block, never to the pointer, and clamped inside the hero */
+    tip.classList.add('on');
+    var pr = plot.getBoundingClientRect();
+    var hr = hostEl.getBoundingClientRect();
+    var half = tip.offsetWidth / 2;
+    var x = (pr.left - hr.left) + g.x + g.w / 2;
+    x = Math.max(half + 8, Math.min(hr.width - half - 8, x));
+    tip.style.left = x + 'px';
+    tip.style.top = Math.max(tip.offsetHeight + 8, (pr.top - hr.top) - 8) + 'px';
+  }
+  function hideTip() {
+    var root = crowdRoot();
+    if (root) {
+      root.classList.remove('dim');
+      $$('g.cl', root).forEach(function (n) { n.classList.remove('hot'); });
+    }
+    tip.classList.remove('on');
+  }
+
+  plot.addEventListener('pointerover', function (e) {
+    var b = e.target.closest ? e.target.closest('.hit') : null;
+    if (b) showTip(+b.dataset.idx);
+  });
+  plot.addEventListener('pointerleave', hideTip);
+  plot.addEventListener('focusin', function (e) {
+    var b = e.target.closest ? e.target.closest('.hit') : null;
+    if (b) showTip(+b.dataset.idx);
+  });
+  plot.addEventListener('focusout', function (e) {
+    if (!plot.contains(e.relatedTarget)) hideTip();
+  });
+
+  /* roving tabindex: one tab stop for the whole chart */
+  plot.addEventListener('keydown', function (e) {
+    var b = e.target.closest ? e.target.closest('.hit') : null;
+    if (!b) return;
+    var hits = $$('.hit', plot);
+    var i = hits.indexOf(b), next = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = hits[Math.min(hits.length - 1, i + 1)];
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = hits[Math.max(0, i - 1)];
+    else if (e.key === 'Home') next = hits[0];
+    else if (e.key === 'End') next = hits[hits.length - 1];
+    else if (e.key === 'Enter' || e.key === ' ') { linkToLedger(i); e.preventDefault(); return; }
+    else if (e.key === 'Escape') { hideTip(); b.blur(); return; }
+    if (next) {
+      e.preventDefault();
+      hits.forEach(function (h) { h.tabIndex = -1; });
+      next.tabIndex = 0;
+      next.focus();
+    }
+  });
+  plot.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.hit') : null;
+    if (b) linkToLedger(+b.dataset.idx);
+  });
+
+  function linkToLedger(idx) {
+    var row = $('#ledgerTable tr[data-pool="' + idx + '"]');
+    if (!row) return;
+    $$('#ledgerTable tr.linked').forEach(function (r) { r.classList.remove('linked'); });
+    row.classList.add('linked');
+    row.scrollIntoView({ block: 'center', behavior: reduced.matches ? 'auto' : 'smooth' });
+    window.setTimeout(function () { row.classList.remove('linked'); }, 2400);
+  }
+
+  /* ------------------------------ countdown ---------------------------- */
+  var left = 41 * 3600;                       /* measured 41h 00m at capture */
+  var clockEl = $('#clockVal'), clockSr = $('#clockSr');
+  function pad(v) { return (v < 10 ? '0' : '') + v; }
+  function tick() {
+    if (left <= 0) { clockEl.textContent = '00:00:00'; clockSr.textContent = 'A price is available.'; return; }
+    var h = (left / 3600) | 0, m = ((left % 3600) / 60) | 0, s = left % 60;
+    clockEl.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+    clockSr.textContent = h + ' hours until the next price.';
+    left--;
+  }
+  tick();
+  window.setInterval(tick, 1000);
+
+  /* ------------------------- session unit chart ------------------------ */
+  (function () {
+    var host = $('#units'), out = '', i;
+    for (i = 0; i < 100; i++) {
+      out += '<span class="' + (i < 36 ? 'u-closed' : i < 71 ? 'u-ext' : 'u-reg') + '"></span>';
+    }
+    host.innerHTML = out;
+  }());
+
+  /* ------------------------------- states ------------------------------ */
+  var stateEls = { loading: $('#skelWrap'), empty: $('#msgEmpty'), error: $('#msgError') };
+  function setState(name) {
+    layerEl.style.display = name === 'live' ? '' : 'none';
+    Object.keys(stateEls).forEach(function (k) { stateEls[k].classList.toggle('on', k === name); });
+    $$('#seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.state === name)); });
+    if (name !== 'live') hideTip();
+  }
+  $$('[data-state]').forEach(function (b) {
+    b.addEventListener('click', function () { setState(b.dataset.state); });
+  });
+
+  /* --------------------------- overlay nav ----------------------------- */
+  var ov = $('#overlay'), openBtn = $('#navOpen'), closeBtn = $('#navClose'), lastFocus = null;
+  function openNav() {
+    lastFocus = document.activeElement;
+    ov.hidden = false;
+    openBtn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    closeBtn.focus();
+  }
+  function closeNav() {
+    ov.hidden = true;
+    openBtn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    if (lastFocus) lastFocus.focus();
+  }
+  openBtn.addEventListener('click', openNav);
+  closeBtn.addEventListener('click', closeNav);
+  $$('[data-nav]').forEach(function (a) { a.addEventListener('click', closeNav); });
+  document.addEventListener('keydown', function (e) {
+    if (ov.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeNav(); return; }
+    if (e.key !== 'Tab') return;
+    var f = $$('a[href], button', ov).filter(function (n) { return n.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  /* ------------------------------ lifecycle ---------------------------- */
+  drawCrowd();
+  var rt = null;
+  window.addEventListener('resize', function () {
+    window.clearTimeout(rt);
+    rt = window.setTimeout(drawCrowd, 140);
+  });
+  if (reduced.addEventListener) reduced.addEventListener('change', function () { lastKey = ''; drawCrowd(); });
+}());
+</script>
+</body>
+</html>

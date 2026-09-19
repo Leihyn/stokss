@@ -54,3 +54,25 @@ describe("nextRegularOpen", () => {
     expect(nextRegularOpen(from).getTime()).toBeGreaterThan(from.getTime());
   });
 });
+
+describe("US daylight-time handling", () => {
+  it("uses 13:30 UTC open while on EDT", () => {
+    // 21 Sep 2026 is inside DST.
+    expect(isRegularSession(at("2026-09-21T13:30:00Z"))).toBe(true);
+    expect(isRegularSession(at("2026-09-21T13:29:00Z"))).toBe(false);
+  });
+
+  it("uses 14:30 UTC open once on EST", () => {
+    // DST ends Sun 1 Nov 2026, so 2 Nov is EST and the session shifts an hour later.
+    expect(isRegularSession(at("2026-11-02T13:30:00Z"))).toBe(false);
+    expect(isRegularSession(at("2026-11-02T14:30:00Z"))).toBe(true);
+    expect(isRegularSession(at("2026-11-02T20:59:00Z"))).toBe(true);
+    expect(isRegularSession(at("2026-11-02T21:00:00Z"))).toBe(false);
+  });
+
+  it("nextRegularOpen respects the EST shift", () => {
+    expect(nextRegularOpen(at("2026-11-02T09:00:00Z")).toISOString()).toBe(
+      "2026-11-02T14:30:00.000Z",
+    );
+  });
+});

@@ -1,4 +1,4 @@
-import { Connection, PublicKey, type VersionedTransaction, type Transaction } from "@solana/web3.js";
+import { Connection, PublicKey, VersionedTransaction, type Transaction } from "@solana/web3.js";
 import { Raydium, CLMM_PROGRAM_ID, TxVersion } from "@raydium-io/raydium-sdk-v2";
 import BN from "bn.js";
 
@@ -69,4 +69,48 @@ export async function buildWithdrawal(
   });
 
   return { transaction, poolId, liquidity: liquidity.toString(), closesPosition };
+}
+
+
+export interface SimulatedWithdrawal {
+  ok: boolean;
+  err: string | null;
+  computeUnits: number | null;
+  logs: string[];
+  poolId: string;
+  liquidity: string;
+}
+
+/**
+ * Executes the exit against real mainnet state WITHOUT sending it.
+ *
+ * Two jobs. It is the honest answer to "will this work" before a holder signs anything,
+ * and it closes the amountMin gap in practice: you see whether the instruction succeeds
+ * against the live pool rather than accepting any output blind.
+ *
+ * sigVerify is off and the blockhash is replaced, so no signature and no funds are needed.
+ * Nothing is broadcast and no state changes.
+ */
+export async function simulateWithdrawal(
+  rpc: string,
+  owner: PublicKey,
+  position: RawPosition,
+  fraction = 1,
+): Promise<SimulatedWithdrawal> {
+  const built = await buildWithdrawal(rpc, owner, position, fraction);
+  const conn = new Connection(rpc, "confirmed");
+  const tx = built.transaction as VersionedTransaction;
+  const sim = await conn.simulateTransaction(tx, {
+    sigVerify: false,
+    replaceRecentBlockhash: true,
+    commitment: "confirmed",
+  });
+  return {
+    ok: sim.value.err === null,
+    err: sim.value.err ? JSON.stringify(sim.value.err) : null,
+    computeUnits: sim.value.unitsConsumed ?? null,
+    logs: (sim.value.logs ?? []).slice(-8),
+    poolId: built.poolId,
+    liquidity: built.liquidity,
+  };
 }

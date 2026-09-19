@@ -4,7 +4,8 @@ import { useCallback, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { buildWithdrawal, loadRawPositions, type RawPosition } from "@/lib/withdraw";
+import { buildWithdrawal, loadRawPositions, simulateWithdrawal,
+  type RawPosition, type SimulatedWithdrawal } from "@/lib/withdraw";
 
 export const XSTOCKS: Record<string, string> = {
   SPYx: "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
@@ -25,13 +26,16 @@ export default function Positions() {
   const [addr, setAddr] = useState("");
   const [status, setStatus] = useState("");
   const [rows, setRows] = useState<RawPosition[]>([]);
+  const [loadedOwner, setLoadedOwner] = useState<PublicKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [sig, setSig] = useState<string | null>(null);
+  const [sim, setSim] = useState<SimulatedWithdrawal | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true); setStatus("loading positions…"); setRows([]); setSig(null);
     try {
       const owner = publicKey ?? new PublicKey(addr.trim());
+      setLoadedOwner(owner);
       const t0 = performance.now();
       const p = await loadRawPositions(rpcUrl(), owner);
       setRows(p);
@@ -40,6 +44,20 @@ export default function Positions() {
       setStatus("error: " + (e as Error).message);
     } finally { setBusy(false); }
   }, [addr, publicKey]);
+
+  /** Dry run against live mainnet. No signature, no funds, nothing broadcast. */
+  const preview = useCallback(async (pos: RawPosition, ownerKey: PublicKey) => {
+    setBusy(true); setStatus("simulating against mainnet…"); setSim(null); setSig(null);
+    try {
+      const r = await simulateWithdrawal(rpcUrl(), ownerKey, pos, 1);
+      setSim(r);
+      setStatus(r.ok
+        ? `exit would succeed · ${r.computeUnits?.toLocaleString()} compute units`
+        : `exit would FAIL: ${r.err}`);
+    } catch (e) {
+      setStatus("error: " + (e as Error).message);
+    } finally { setBusy(false); }
+  }, []);
 
   /** Builds the exit, hands it to the wallet. We never hold the position or sign for it. */
   const withdraw = useCallback(async (pos: RawPosition) => {
@@ -98,6 +116,20 @@ export default function Positions() {
         </a>
       )}
 
+      {sim && (
+        <div className={`mt-3 rounded-lg border p-3 ${sim.ok ? "border-emerald-400/25 bg-emerald-400/[0.05]" : "border-red-400/25 bg-red-400/[0.05]"}`}>
+          <div className={`font-mono text-xs font-medium ${sim.ok ? "text-emerald-300" : "text-red-300"}`}>
+            {sim.ok ? "SIMULATED OK — this exit would execute" : `SIMULATED FAIL — ${sim.err}`}
+          </div>
+          <p className="mt-1 font-mono text-[10px] text-white/40">
+            dry run against live mainnet · {sim.computeUnits?.toLocaleString() ?? "?"} CU · nothing signed, nothing broadcast
+          </p>
+          <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-white/45">
+{sim.logs.join("\n")}
+          </pre>
+        </div>
+      )}
+
       {rows.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {rows.map((r) => {
@@ -110,6 +142,12 @@ export default function Positions() {
                     liquidity {r.liquidity.toString()} · ticks {r.tickLower} → {r.tickUpper}
                   </div>
                 </div>
+                <button
+                  onClick={() => loadedOwner && preview(r, loadedOwner)} disabled={busy || !loadedOwner}
+                  className="shrink-0 rounded-md border border-white/20 px-2.5 py-1 font-mono text-[11px] text-white/70 hover:bg-white/5 disabled:opacity-40"
+                >
+                  preview exit
+                </button>
                 <button
                   onClick={() => withdraw(r)} disabled={busy || !publicKey}
                   className="shrink-0 rounded-md border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 font-mono text-[11px] text-amber-300 hover:bg-amber-400/15 disabled:opacity-40"

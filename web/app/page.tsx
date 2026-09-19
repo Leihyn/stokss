@@ -1,5 +1,6 @@
 import data from "@/data/measurements.json";
 import SessionBadge from "@/components/SessionBadge";
+import ExposurePanel from "@/components/ExposurePanel";
 import { fetchSession } from "@/lib/session";
 
 export const revalidate = 30;
@@ -41,6 +42,10 @@ export default async function Home() {
 
       <section className="mb-10">
         <SessionBadge initial={session} />
+      </section>
+
+      <section className="mb-14">
+        <ExposurePanel initial={session} />
       </section>
 
       <section className="mb-14 grid gap-3 sm:grid-cols-3">

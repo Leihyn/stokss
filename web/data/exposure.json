@@ -1,0 +1,542 @@
+{
+  "measuredAt": "2026-09-19T12:34:53.630Z",
+  "method": "Raydium CLMM PersonalPositionState accounts, memcmp on pool_id at offset 41 (verified empirically). Pools discovered via GeckoTerminal, raydium venues only, >=$1k liquidity.",
+  "totalPositions": 2777,
+  "totalPoolLiquidityUsd": 16185662,
+  "poolsScanned": 76,
+  "tokens": 6,
+  "pools": [
+    {
+      "symbol": "SPYx",
+      "pool": "6truu3rZuiB9rKQg4VYC3Dt3QwV7DgwGqXrYUcrvnDDE",
+      "name": "SPYx / USDC",
+      "liqUsd": 3010527.0418,
+      "positions": 660
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "BS9uyGV6XmNnPkM4f3xgxCdQEaFv7RSKs6fwrpvYHxfL",
+      "name": "SPYx / SOL",
+      "liqUsd": 1318107.5906,
+      "positions": 386
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "GMjGLWzvK75LPetrgAmdeXnvxc4fUuQPwJxeQqTDU1aG",
+      "name": "QQQx / USDC",
+      "liqUsd": 2200513.9258,
+      "positions": 375
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "4pCZCVEiYyT4efNdXUdL2tJF8VGMgiMXrZWq6FiNXhRw",
+      "name": "SPYx / USDC",
+      "liqUsd": 549429.0264,
+      "positions": 200
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "7sHMnvE7WqP7vQFWJGEnMT4vZg6Za9K7PpddDoXJCqME",
+      "name": "SPYx / USDC",
+      "liqUsd": 93350.1677,
+      "positions": 191
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "CKwJZwm7oj3nu4653N1EpDrqXbXAYXoPFiPeEnLouF8y",
+      "name": "AAPLx / USDC",
+      "liqUsd": 191553.7528,
+      "positions": 179
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "B6FEtQdwsq8Wuw4G52pW9WEWEA7ALGfyUgXDRKigDSHH",
+      "name": "QQQx / SOL",
+      "liqUsd": 204100.3875,
+      "positions": 156
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "5MGvNj9RNKNmzwp1LtZuQkZonEYtKJ3JuiyNQEUU2DsF",
+      "name": "MCDx / USDC",
+      "liqUsd": 559352.9322,
+      "positions": 142
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "7a8xxAJBELDo6P9dikSYctdw6ce8F4mWr3ahcAD8Ao49",
+      "name": "STONK / SPYx",
+      "liqUsd": 6172789.6108,
+      "positions": 111
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "DU9dgBU6Yh2JjsYcjtRY21G14dhQxn6Xm5PT949Sa4tA",
+      "name": "STRCx / USDC",
+      "liqUsd": 431270.3167,
+      "positions": 89
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "FknDV1F5n6QaA7rLmjquDjuU6wcPMNm5RYq7zWbqhpZw",
+      "name": "QQQx / USDC",
+      "liqUsd": 54524.8574,
+      "positions": 86
+    },
+    {
+      "symbol": "KOx",
+      "pool": "7HNwUP5rSUo9GfdDthJn4UCdw2Px6h2aprSedD7r7J3C",
+      "name": "KOx / USDC",
+      "liqUsd": 65107.8268,
+      "positions": 64
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "DppCVaAGq5VA9gGK32u21JNqBf5d7jqH7RGDEvj39gQY",
+      "name": "STRCx / USDC",
+      "liqUsd": 70932.8922,
+      "positions": 50
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "EUnoAwXybSenwkvQ3Qp4aWQxmw2AZrVCbAn6Sztjhbjo",
+      "name": "AAPLx / SOL",
+      "liqUsd": 21186.0494,
+      "positions": 38
+    },
+    {
+      "symbol": "KOx",
+      "pool": "2vB8osib3H8V2Ba58pYtyF9U8TiBfi7eUJ9idj5UtP1K",
+      "name": "KOx / SOL",
+      "liqUsd": 11274.1499,
+      "positions": 17
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "6HqstnfN8RN5sAdRZMCr88tD2GKpuWBjRntwyKxLG75V",
+      "name": "FRIES / MCDx",
+      "liqUsd": 95737.9592,
+      "positions": 9
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "EibwWLHyuFeqgU6fvi6g5FtDLF9kQsQL5HQXvcJNkDN8",
+      "name": "QQQx / USDC",
+      "liqUsd": 1390.0599,
+      "positions": 7
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "ApniVWuZbZoruTAJdyJcLBA4AVw4DKGdV5fHxo6qrAZT",
+      "name": "AAPLx / USDC",
+      "liqUsd": 246339.0996,
+      "positions": 4
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "EbJQBGTvvxBKahLNewRDUdpEKmKqM3QuLeJWCfxVd9EJ",
+      "name": "STRCx / SOL",
+      "liqUsd": 1645.809,
+      "positions": 4
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "DUv5LL9s1WPQQMeUqwdukuwScmM1i6PMx7t1GgMgyscG",
+      "name": "TREE / AAPLx",
+      "liqUsd": 81038.6532,
+      "positions": 3
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "7J3CWXX3Fz4drdykvEeKVHHRNNirePc8EDnYbFQo8VBH",
+      "name": "QQQx / ETHICS",
+      "liqUsd": 69004.1228,
+      "positions": 2
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "7DKRWg1LainJHAWe3D47HiKr3kKEfkGsX5RjrERU1ehq",
+      "name": "STRCx / MSFTx",
+      "liqUsd": 1700.3761,
+      "positions": 2
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "6yBRCb24zQwnPAU8p5WHaz3nGwCbTydsruswiWXCRCx9",
+      "name": "FRIES / MCDx",
+      "liqUsd": 9817.0897,
+      "positions": 2
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "GQaaxcjJeVf6bys9Z9m39EHWRhyoBH54KqnrRnd3YRRE",
+      "name": "Equitty / SPYx",
+      "liqUsd": 9969.5885,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "2i342rFY425BrAp5r6VeP7rJ8xrs374Bd55w3EbyXMp9",
+      "name": "CATx / SPYx",
+      "liqUsd": 4976.1334,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "HsyidEyMzgMQEEk1Xsx8xoBdNg9Pfy32kC5pGNTEQXF9",
+      "name": "BLVINU / SPYx",
+      "liqUsd": 17879.8404,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "3iGccWyf9QzL5E54fc3VFb74XGbof97i8r2ojd6Nju2H",
+      "name": "Retire / SPYx",
+      "liqUsd": 7111.6317,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "Bkyf63H6KJBwtVMaGVofZKNg88u5U3SYh3YocDfex2c5",
+      "name": "STOCKCAT / SPYx",
+      "liqUsd": 15977.0567,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "4AJSDjoe2c9kXi8YothqFPTdSK9qM411vFFEq46PZdto",
+      "name": ".gov / SPYx",
+      "liqUsd": 4559.8725,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "32HxztHLj4pTDEHqteDojF4waZpZbNepqJhXMoSHvbdm",
+      "name": "PVE / SPYx",
+      "liqUsd": 3312.5307,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "ATvnQfMvDAKgsZUbx2pswqdLbTKaKDrbutvEnEfbAU6G",
+      "name": "SPYINU / SPYx",
+      "liqUsd": 4240.6799,
+      "positions": 0
+    },
+    {
+      "symbol": "SPYx",
+      "pool": "E4ET2TK9nwdsqNDiQ9jDyjehG7VKTrJfzYcrhSGVJvty",
+      "name": "fatcat / SPYx",
+      "liqUsd": 3540.4678,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "FEMHMyNvZsDoXJVU1HgkSDsYyuEt4tKhKyKsd9L5L5hw",
+      "name": "NASDOG / QQQx",
+      "liqUsd": 28064.9375,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "F9dJYz6G2sgdjfoyhcu6QGWzVi1HbdtyUG6YRNypJ6ox",
+      "name": "Nascat / QQQx",
+      "liqUsd": 3649.4171,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "9ekreEd9tUA3eAhLoMoD4P5c4LyBmrpfnBtXXPkwjnFc",
+      "name": "Parity / QQQx",
+      "liqUsd": 3632.5292,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "9xgjkczW5ftKe8RjcFa46X6EMVxZrjHMZWhucjAEMDgf",
+      "name": "Nasdog / QQQx",
+      "liqUsd": 3361.7398,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "23ZmixVrCmrzsFi8FPDVKmRxFiBxwAtBaJNmgpK43fbw",
+      "name": "BNKK / QQQx",
+      "liqUsd": 5005.6688,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "Gn5qpUnPB4sSv8ezV6DftZmnQ4V6TL5iZrsfT1a5Zpbc",
+      "name": "INU / QQQx",
+      "liqUsd": 2817.8602,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "AC4F9Q1hXhDT7e9TC9vsP7S7ZSSXc4JzZ64vk4ujFqUN",
+      "name": "BONKS / QQQx",
+      "liqUsd": 3069.8138,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "2UchFq8nHq5iY3ju4KfEnffJdNyaJwED3B26pd6UHoum",
+      "name": "THEBULL / QQQx",
+      "liqUsd": 3938.5134,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "ESFzTHNLyuD5ihW7Ry7K5zCWi8y2yxy1obsa1maAfuwE",
+      "name": "NQDOG / QQQx",
+      "liqUsd": 5102.9331,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "8nhzMEdtLXVHv2n9cw3CZ5mFAeFhCWBmxEWmn138NbNJ",
+      "name": "KIMCHI / QQQx",
+      "liqUsd": 2743.5753,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "Bj4vHvmfH62cPC7MpSS7rVr5BN27P6ouM271TXg1eHNi",
+      "name": "Nasdog / QQQx",
+      "liqUsd": 2240.8647,
+      "positions": 0
+    },
+    {
+      "symbol": "QQQx",
+      "pool": "4KqwfxcZdSALt2dAGHCwnnmCMZa7hP1qML7fGdwjC4tn",
+      "name": "ASSETS / QQQx",
+      "liqUsd": 3911.9324,
+      "positions": 0
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "3Z7aMXnmzANSjiMEZRs6yXH6HfjoWeLK2QWUNQNHzsN7",
+      "name": "IDOG / AAPLx",
+      "liqUsd": 9327.2055,
+      "positions": 0
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "Cv11ujPZybU6jxpsA6FxoLyb5inP66dwssifJ2odzu9X",
+      "name": "IFUN / AAPLx",
+      "liqUsd": 3126.8205,
+      "positions": 0
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "Bm2LXLu6UkTN3wwdiMNDsMDgqVV2Q2ZaG5hX8Qq21GfG",
+      "name": "AAPLx / FIN",
+      "liqUsd": 8096.0704,
+      "positions": 0
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "BPPtPrgHbHqiq4Dd6JUEMK6r8NxTsdwRQ3bTfhaFQCjD",
+      "name": "BUTTHOLE / AAPLx",
+      "liqUsd": 3201.9498,
+      "positions": 0
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "3qYrEDyNnewfkN2J4c1Uo9VERTQkM2iPbVq5xS7Lb6F8",
+      "name": "memes / AAPLx",
+      "liqUsd": 2612.1621,
+      "positions": 0
+    },
+    {
+      "symbol": "AAPLx",
+      "pool": "CxqoCZw5SErXeHFtWAH2eLwfhotwgxgtZsCbfrbQ2cyi",
+      "name": "Sob / AAPLx",
+      "liqUsd": 3116.6579,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "2KQ3RJnqu9h2FU6bmRBDAhyzi8ib3WaLv8rATebW6BRA",
+      "name": "COKE / KOx",
+      "liqUsd": 35165.9465,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "HA5tQL9rjvob8HT4PetQSheLHVSSxWHD85rnJ8LkuE7M",
+      "name": "KOx / COCAINU",
+      "liqUsd": 14223.274,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "AJo1kYmt4ftt4wpagcZM9wtM7svJeargkTmbDycrVTP9",
+      "name": "KOx / COKEMAN",
+      "liqUsd": 5418.4334,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "GwmMmCnmFioqe9UqMv1sNNfr8dX7h8ATVwKFiYuiQrgk",
+      "name": "KOx / CIGS",
+      "liqUsd": 11182.0774,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "Drp7vHkJCz7igsoYdrJUM8PttibN9aS1Wgz8stiE7S7u",
+      "name": "KOx / ok",
+      "liqUsd": 7802.0413,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "9nKQBqNDuq3xymoknXXug5Ln7oTjtgB5jCHqDkFZzjWj",
+      "name": "KOx / MORGAN",
+      "liqUsd": 5926.6425,
+      "positions": 0
+    },
+    {
+      "symbol": "KOx",
+      "pool": "C6tQVNcdifno4NocY6ZYefRDZRhi6Mrjm2hV2qVSqXFB",
+      "name": "KOx / COKE",
+      "liqUsd": 4035.911,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "9jP2H9FbqkYQtKYkehsq3XcGn36FFb15cCo96EBu339s",
+      "name": "STRCx / DIVI",
+      "liqUsd": 234236.7714,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "GSc6ipypcnceSSrKudFEp9zRaTqqRQGoB8wxU1QLDzNZ",
+      "name": "STRCx / haMSTR",
+      "liqUsd": 33434.676,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "6MTo2UWKFxTDjRPxKWh13UNoeFEWb6t2WDfkcfXnt5Aq",
+      "name": "STRCx / STRCAT",
+      "liqUsd": 5671.156,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "4xieCJfLbXk7TUoqnjRDKmv7xRZnSGo85Y9wtWUWrDzY",
+      "name": "STRCx / PNZI",
+      "liqUsd": 4120.0107,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "2Sx2irhWjPHcVL6TKr3a9gDSR66MJz5jkj3ieRALvVBG",
+      "name": "STRCx / STRC",
+      "liqUsd": 4646.1948,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "HTdA2sZjB5a7dKRGm3qELZNeAZ5Xg2eCAq9RMh5bq259",
+      "name": "STRCx / STRC",
+      "liqUsd": 4310.6448,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "GDqkrYHWsVAPeUUEA3b9ScuEVWc5dufmTZMcHCPRdMd4",
+      "name": "STRCx / USDC",
+      "liqUsd": 48756.5981,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "EWTxY6tYM7qNqDRn9wmfEGxC4CacVAtKkaW48pMU9NkH",
+      "name": "STRCx / SOL",
+      "liqUsd": 9027.9722,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "571q8gm3Cng43C7KRi7wMDT94eG7MQYk6k6rSYydbcM2",
+      "name": "STRCx / Luna",
+      "liqUsd": 5727.4083,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "5cG6wKHdLv3eNnME4GTHjLdkH7fGDkeud8J6Zz1TCzUZ",
+      "name": "STRCx / STRC",
+      "liqUsd": 5437.5438,
+      "positions": 0
+    },
+    {
+      "symbol": "STRCx",
+      "pool": "2NjZ3adwih7KprPFQKZVMQge1ZhqMHLwQBSfEzturDR4",
+      "name": "STRCx / USDC",
+      "liqUsd": 3004.299,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "D24mkQB9kgvKzjPwqre9dTAppQUEYKvRZdHk7WbBWqRZ",
+      "name": "MCDx / MCCAT",
+      "liqUsd": 59261.6813,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "4nkBikJvh6WvEgNpVGg8MjKmtfU2v71ZBBZ44fwSTpLx",
+      "name": "MCDx / MCINU",
+      "liqUsd": 13154.1986,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "7gfMhCEt3GXrNaXeRUtVi1ZNn8aQAjzrovtztTMtZqu9",
+      "name": "MCDx / WAGIE",
+      "liqUsd": 17309.9156,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "57N8osqVxjRef2DDjbVVbv9Er98LAf9potPMwmG5REEW",
+      "name": "MCDx / McKitten",
+      "liqUsd": 4242.1438,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "GNa9zeB81FUQ3h6TakbCoWtxRuAj4PmfuwD6JXdXCQD",
+      "name": "MCDx / O’MEAL",
+      "liqUsd": 6350.1716,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "7CptiTeThQufqfhJTT55e1AsaViJ5UFn2DkDG49ueWqh",
+      "name": "MCDx / Jobcoin",
+      "liqUsd": 5594.6576,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "GgcurS22xKuW5zzMGMz4wbH8KbDHS2hy4xcrXMfFTyTn",
+      "name": "MCDx / BMI",
+      "liqUsd": 3975.7513,
+      "positions": 0
+    },
+    {
+      "symbol": "MCDx",
+      "pool": "Bb3Ya5X6zfzDnfGQkFtKx52sgs3R67ikQ9YQy4VkBJNN",
+      "name": "MCDx / ZOA",
+      "liqUsd": 4364.1249,
+      "positions": 0
+    }
+  ]
+}

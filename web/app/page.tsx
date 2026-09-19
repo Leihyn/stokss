@@ -1,4 +1,8 @@
 import data from "@/data/measurements.json";
+import SessionBadge from "@/components/SessionBadge";
+import { fetchSession } from "@/lib/session";
+
+export const revalidate = 30;
 
 const usd = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${(n / 1_000).toFixed(0)}K`;
@@ -14,8 +18,9 @@ function Bar({ pct, tone }: { pct: number; tone: "open" | "closed" }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
   const { sessions, headline, liquidity, issuerControl } = data;
+  const session = await fetchSession("SPYx");
   return (
     <main className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
       <header className="mb-14">
@@ -33,6 +38,10 @@ export default function Home() {
           so the mechanism that anchors the token to its net asset value is not running.
         </p>
       </header>
+
+      <section className="mb-10">
+        <SessionBadge initial={session} />
+      </section>
 
       <section className="mb-14 grid gap-3 sm:grid-cols-3">
         {[

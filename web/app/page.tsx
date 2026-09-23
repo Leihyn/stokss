@@ -162,6 +162,7 @@ export default async function Home({
           marketOpen={session.regularSession}
           period={session.period}
           frozenNow={preview ? darkInstant().getTime() : undefined}
+          serverNow={new Date(session.fetchedAt).getTime()}
         />
 
         {/* marketOpen is the US REGULAR session. It was wired to !feedStale, i.e. Pyth

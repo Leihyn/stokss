@@ -19,6 +19,16 @@ interface WeekGridProps {
   period?: string | null; // "market" | "extended" | "overnight" | "closed"
   /** When set, the page is rendering at a simulated instant rather than the live clock. */
   frozenNow?: number;
+  /**
+   * The server's own clock at render time.
+   *
+   * The store deliberately returns null on the server so the 168-cell grid never hydrates
+   * against a different "now" than it rendered with. That is right for the GRID, but it
+   * also blanked the time readout to "--:-- ---" until hydration. The readout is one line
+   * of text, so it takes the server's value and carries suppressHydrationWarning: a clock
+   * differing between render and hydration is the expected behaviour of a clock.
+   */
+  serverNow?: number;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
@@ -84,12 +94,20 @@ function subscribeToClock(onChange: () => void): () => void {
 const readClock = () => clockSnapshot;
 const readClockOnServer = () => null;
 
-export default function WeekGrid({ marketOpen, period, frozenNow }: WeekGridProps) {
+export default function WeekGrid({
+  marketOpen,
+  period,
+  frozenNow,
+  serverNow,
+}: WeekGridProps) {
   const liveMs = useSyncExternalStore(subscribeToClock, readClock, readClockOnServer);
   // The preview renders the whole page at a simulated instant; the grid must agree with it
   // rather than highlighting the real current hour on a Saturday preview.
   const nowMs = frozenNow ?? liveMs;
   const now = nowMs === null ? null : new Date(nowMs);
+  // Grid marker uses `now` (absent until hydration). The readout falls back to the server's
+  // clock so it never paints a placeholder.
+  const shown = now ?? (serverNow === undefined ? null : new Date(serverNow));
 
   // getUTCDay is 0=Sunday; this grid begins on Monday.
   const nowDay = now ? (now.getUTCDay() + 6) % 7 : -1;
@@ -228,8 +246,10 @@ export default function WeekGrid({ marketOpen, period, frozenNow }: WeekGridProp
 
         <div className="flex flex-col gap-[3px]">
           <dt className="text-micro uppercase text-ink-500">Now (UTC)</dt>
-          <dd className="tnum font-mono text-value text-ink-100">
-            {now ? `${pad(nowHour)}:${pad(now.getUTCMinutes())} ${DAYS[nowDay]}` : "--:-- ---"}
+          <dd className="tnum font-mono text-value text-ink-100" suppressHydrationWarning>
+            {shown
+              ? `${pad(shown.getUTCHours())}:${pad(shown.getUTCMinutes())} ${DAYS[(shown.getUTCDay() + 6) % 7]}`
+              : "--:-- ---"}
           </dd>
         </div>
 

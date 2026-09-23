@@ -21,6 +21,14 @@ export interface SessionState {
   exchange: string | null;
   /** False when the issuer will not create or redeem, i.e. the NAV anchor is off. */
   createRedeemEnabled: boolean;
+  /**
+   * Is the US REGULAR session running?
+   *
+   * Distinct from `openNow`, which is the issuer's 24/5 create-redeem window. At 21:00 UTC
+   * the issuer reports open with period "extended" while the regular session closed an hour
+   * earlier. Conflating the two put "Open" in the nav next to "The feed stopped" in the hero.
+   */
+  regularSession: boolean;
   maxOrderFiatValue: number | null;
   /** Next issuer session transition, from the issuer itself. */
   nextChangeAt: string | null;
@@ -93,6 +101,7 @@ export async function fetchSession(symbol = "SPYx"): Promise<SessionState> {
     symbol,
     nextRegularOpenAt: nro.toISOString(),
     unpricedHoursAhead: isRegularSession(now) ? 0 : (nro.getTime() - now.getTime()) / 3_600_000,
+    regularSession: isRegularSession(now),
     fetchedAt: now.toISOString(),
   };
   try {

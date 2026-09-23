@@ -35,20 +35,28 @@ export default async function Home() {
   ]);
   const { sessions, liquidity, issuerControl } = data;
 
+  /**
+   * "The feed stopped" is only true if it actually stopped. Pyth's publish age is measured
+   * and is already rendered on the page, so the hero's claim is self-evidencing rather than
+   * inferred from a session calendar. An hour of tolerance covers normal publish cadence.
+   */
+  const equityAge = equity?.ageSeconds ?? 68_400;
+  const feedStale = equityAge > 3_600;
+
   return (
     <>
       <nav className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-base-800 bg-base-950/95 px-(--gutter)">
         <span className="flex items-center gap-2.5 font-sans text-read font-semibold tracking-tight">
           <span
-            className={`inline-block h-2 w-2 rounded-[2px] ${session.openNow ? "bg-open-400" : "bg-shut-400"}`}
+            className={`inline-block h-2 w-2 rounded-[2px] ${session.regularSession ? "bg-open-400" : "bg-shut-400"}`}
             aria-hidden
           />
           Closing Bell
         </span>
         <span className="flex items-center gap-2 rounded-control border border-base-700 px-3 py-1.5 font-mono text-micro uppercase tracking-wider text-ink-300">
           US equities
-          <span className={session.openNow ? "text-open-400" : "text-shut-400"}>
-            · {session.openNow ? "Open" : "Closed"}
+          <span className={session.regularSession ? "text-open-400" : "text-shut-400"}>
+            · {session.regularSession ? "Open" : session.period === "extended" ? "Extended" : "Closed"}
           </span>
         </span>
       </nav>
@@ -59,16 +67,16 @@ export default async function Home() {
             coincide and the argument weakens. So when the market is open the week grid leads
             instead — it makes the same case in either state, because 32.5 of 168 is the point.
             Judging runs through 2 Oct, so the open state will be seen. */}
-        {session.openNow ? (
+        {!feedStale ? (
           <>
-            <WeekGrid marketOpen={session.openNow} period={session.period} />
+            <WeekGrid marketOpen={!feedStale} period={session.period} />
             <FrozenPrint
               equityPrice={equity?.price ?? 762.96}
               equityAgeSeconds={equity?.ageSeconds ?? 68_400}
               impliedPrice={implied.impliedSharePrice}
               unpricedHoursAhead={session.unpricedHoursAhead}
               nextRegularOpenAt={session.nextRegularOpenAt}
-              marketOpen={session.openNow}
+              marketOpen={!feedStale}
               createRedeemEnabled={session.createRedeemEnabled}
             />
           </>
@@ -80,16 +88,16 @@ export default async function Home() {
               impliedPrice={implied.impliedSharePrice}
               unpricedHoursAhead={session.unpricedHoursAhead}
               nextRegularOpenAt={session.nextRegularOpenAt}
-              marketOpen={session.openNow}
+              marketOpen={!feedStale}
               createRedeemEnabled={session.createRedeemEnabled}
             />
-            <WeekGrid marketOpen={session.openNow} period={session.period} />
+            <WeekGrid marketOpen={!feedStale} period={session.period} />
           </>
         )}
 
         <ExposureSection
           unpricedHoursAhead={session.unpricedHoursAhead}
-          marketOpen={session.openNow}
+          marketOpen={!feedStale}
         />
 
         <section

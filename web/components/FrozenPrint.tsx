@@ -195,9 +195,19 @@ export default function FrozenPrint({
             id="frozen-print-title"
             className="text-display font-bold text-ink-100 [font-stretch:88%]"
           >
-            The feed stopped.
-            <br />
-            The token didn&rsquo;t.
+            {marketOpen ? (
+              <>
+                The feed is live.
+                <br />
+                The token never stops.
+              </>
+            ) : (
+              <>
+                The feed stopped.
+                <br />
+                The token didn&rsquo;t.
+              </>
+            )}
           </h1>
 
           <p className="text-lede text-ink-300">

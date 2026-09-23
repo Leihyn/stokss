@@ -7,7 +7,7 @@ export const revalidate = 30;
 
 export default async function PositionsPage() {
   const session = await fetchSession("SPYx");
-  const exposed = session.unpricedHoursAhead > 0;
+  const exposed = !session.regularSession;
 
   return (
     <Providers>
@@ -17,15 +17,15 @@ export default async function PositionsPage() {
           className="flex items-center gap-2.5 font-sans text-read font-semibold tracking-tight text-ink-100"
         >
           <span
-            className={`inline-block h-2 w-2 rounded-[2px] ${session.openNow ? "bg-open-400" : "bg-shut-400"}`}
+            className={`inline-block h-2 w-2 rounded-[2px] ${session.regularSession ? "bg-open-400" : "bg-shut-400"}`}
             aria-hidden
           />
           Closing Bell
         </Link>
         <span className="flex items-center gap-2 rounded-control border border-base-700 px-3 py-1.5 font-mono text-micro uppercase tracking-wider text-ink-300">
           US equities
-          <span className={session.openNow ? "text-open-400" : "text-shut-400"}>
-            · {session.openNow ? "Open" : "Closed"}
+          <span className={session.regularSession ? "text-open-400" : "text-shut-400"}>
+            · {session.regularSession ? "Open" : session.period === "extended" ? "Extended" : "Closed"}
           </span>
         </span>
       </nav>

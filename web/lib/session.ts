@@ -29,6 +29,30 @@ export interface SessionState {
    * earlier. Conflating the two put "Open" in the nav next to "The feed stopped" in the hero.
    */
   regularSession: boolean;
+  /** Hours until the regular session closes. 0 when it is already shut. */
+  hoursUntilClose: number;
+  /** Length of the next unpriced window, in hours. */
+  darkWindowHours: number;
+  /** ISO timestamp of this session's close. Null when already shut. */
+  sessionCloseAt: string | null;
+  /**
+   * How hard the NAV anchor is running, from the issuer's own published limits.
+   *
+   *   full     market / extended - maxOrderFiatValue at its ceiling
+   *   reduced  overnight         - still creating and redeeming, at a smaller cap
+   *   off      closed            - maxOrderFiatValue === 0, nothing pulls the token to NAV
+   *
+   * The earlier model collapsed this to a boolean and the page claimed the anchor was off
+   * for every unpriced hour. Five days of polling says otherwise: weeknights report
+   * `overnight` with a live cap. Only the weekend reports `closed`.
+   */
+  anchorState: "full" | "reduced" | "off";
+  /** The issuer's cap during the regular session, for comparison against the current one. */
+  marketMaxOrderFiatValue: number | null;
+  /** Start of the next window in which the issuer will not create or redeem at all. */
+  nextAnchorOffAt: string;
+  /** Hours until that window opens. Zero when it is already open. */
+  hoursUntilAnchorOff: number;
   maxOrderFiatValue: number | null;
   /** Next issuer session transition, from the issuer itself. */
   nextChangeAt: string | null;
@@ -102,6 +126,11 @@ export async function fetchSession(symbol = "SPYx"): Promise<SessionState> {
     nextRegularOpenAt: nro.toISOString(),
     unpricedHoursAhead: isRegularSession(now) ? 0 : (nro.getTime() - now.getTime()) / 3_600_000,
     regularSession: isRegularSession(now),
+    hoursUntilClose: hoursUntilSessionClose(now),
+    darkWindowHours: darkWindowLength(now),
+    sessionCloseAt: sessionCloseIso(now),
+    nextAnchorOffAt: nextAnchorOff(now).toISOString(),
+    hoursUntilAnchorOff: Math.max(0, (nextAnchorOff(now).getTime() - now.getTime()) / 3_600_000),
     fetchedAt: now.toISOString(),
   };
   try {
@@ -115,8 +144,12 @@ export async function fetchSession(symbol = "SPYx"): Promise<SessionState> {
     const period = (t.currentPeriod ?? null) as Period | null;
     const lim = period ? t.limitsPerPeriod?.[period] : null;
     const maxOrder = typeof lim?.maxOrderFiatValue === "number" ? lim.maxOrderFiatValue : null;
+    const mktLim = t.limitsPerPeriod?.market?.maxOrderFiatValue;
+    const marketMax = typeof mktLim === "number" ? mktLim : null;
     return {
       ...base,
+      anchorState: anchorStateFrom(maxOrder, marketMax),
+      marketMaxOrderFiatValue: marketMax,
       period,
       openNow: !!t.openNow,
       isTradingHalted: !!(t.isTradingHalted ?? j?.isTradingHalted),
@@ -132,6 +165,8 @@ export async function fetchSession(symbol = "SPYx"): Promise<SessionState> {
     return {
       ...base,
       period: open ? "market" : "closed",
+      anchorState: open ? "full" : "off",
+      marketMaxOrderFiatValue: null,
       openNow: open,
       isTradingHalted: false,
       exchange: null,
@@ -141,4 +176,71 @@ export async function fetchSession(symbol = "SPYx"): Promise<SessionState> {
       source: "calendar",
     };
   }
+}
+
+/** Hours from now until the regular session closes. Zero when already shut. */
+export function hoursUntilSessionClose(now: Date): number {
+  if (!isRegularSession(now)) return 0;
+  const { close } = sessionBoundsUtc(now);
+  const c = new Date(now);
+  c.setUTCHours(Math.floor(close / 60), close % 60, 0, 0);
+  return Math.max(0, (c.getTime() - now.getTime()) / 3_600_000);
+}
+
+/**
+ * How long the next unpriced stretch lasts.
+ *
+ * During the session it is close -> next open. Outside it, now -> next open. This is the
+ * number the product exists to name, so it is computed rather than assumed.
+ */
+export function darkWindowLength(now: Date): number {
+  const from = new Date(now);
+  if (isRegularSession(now)) {
+    const { close } = sessionBoundsUtc(now);
+    from.setUTCHours(Math.floor(close / 60), close % 60, 0, 0);
+  }
+  return (nextRegularOpen(from).getTime() - from.getTime()) / 3_600_000;
+}
+
+/** ISO timestamp of the current session's close, or null when already shut. */
+export function sessionCloseIso(now: Date): string | null {
+  if (!isRegularSession(now)) return null;
+  const { close } = sessionBoundsUtc(now);
+  const c = new Date(now);
+  c.setUTCHours(Math.floor(close / 60), close % 60, 0, 0);
+  return c.toISOString();
+}
+
+/**
+ * Classify the anchor from two numbers the issuer publishes itself.
+ *
+ * Zero is unambiguous: no creation, no redemption, no arbitrage. Anything below the
+ * regular-session ceiling is a throttle, not a shutdown, and saying otherwise overstates
+ * the problem on four nights out of seven.
+ */
+export function anchorStateFrom(
+  current: number | null,
+  marketCeiling: number | null,
+): "full" | "reduced" | "off" {
+  if (current === 0) return "off";
+  if (current === null) return "full";
+  if (marketCeiling !== null && current < marketCeiling) return "reduced";
+  return "full";
+}
+
+/**
+ * Start of the next stretch in which the issuer creates and redeems nothing.
+ *
+ * Measured, not assumed: 5,385 polls between 2026-09-18 and 2026-09-23 report `closed`
+ * across the whole of Saturday and Sunday and at no other time except ~10-minute gaps at
+ * session boundaries. The longest continuously observed run was 42.1 hours.
+ */
+export function nextAnchorOff(now: Date): Date {
+  const d = new Date(now);
+  const day = d.getUTCDay();
+  if (day === 6 || day === 0) return now; // already inside it
+  const sat = new Date(d);
+  sat.setUTCDate(d.getUTCDate() + ((6 - day + 7) % 7 || 7));
+  sat.setUTCHours(0, 0, 0, 0);
+  return sat;
 }

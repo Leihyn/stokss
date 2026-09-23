@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isRegularSession, nextRegularOpen } from "../session";
+import {
+  isRegularSession,
+  nextRegularOpen,
+  anchorStateFrom,
+  nextAnchorOff,
+} from "../session";
 
 /** Sep 2026 is EDT, so the regular session is 13:30-20:00 UTC on weekdays. */
 const at = (iso: string) => new Date(iso);
@@ -74,5 +79,51 @@ describe("US daylight-time handling", () => {
     expect(nextRegularOpen(at("2026-11-02T09:00:00Z")).toISOString()).toBe(
       "2026-11-02T14:30:00.000Z",
     );
+  });
+});
+
+describe("anchor state, from the issuer's published limits", () => {
+  // The issuer's own numbers, fetched 2026-09-23: market and extended share a $100M cap,
+  // overnight runs at $20M, closed is zero.
+  const MARKET = 100_000_000;
+
+  it("calls zero off - the only state with no arbitrage at all", () => {
+    expect(anchorStateFrom(0, MARKET)).toBe("off");
+  });
+
+  it("calls the overnight cap reduced, not off", () => {
+    // The bug this guards: the page treated every unpriced hour as anchor-off, which
+    // overstates the problem on four nights out of seven. 5,385 polls over five days
+    // report `overnight` with a live cap on weeknights and `closed` only at weekends.
+    expect(anchorStateFrom(20_000_000, MARKET)).toBe("reduced");
+  });
+
+  it("calls the session cap full", () => {
+    expect(anchorStateFrom(MARKET, MARKET)).toBe("full");
+  });
+
+  it("does not invent a throttle when the issuer publishes no ceiling", () => {
+    expect(anchorStateFrom(20_000_000, null)).toBe("full");
+  });
+});
+
+describe("nextAnchorOff", () => {
+  it("points at Saturday 00:00 UTC from midweek", () => {
+    expect(nextAnchorOff(at("2026-09-23T21:17:00Z")).toISOString()).toBe(
+      "2026-09-26T00:00:00.000Z",
+    );
+  });
+
+  it("rolls Friday to the next day, not seven days out", () => {
+    expect(nextAnchorOff(at("2026-09-25T23:00:00Z")).toISOString()).toBe(
+      "2026-09-26T00:00:00.000Z",
+    );
+  });
+
+  it("returns now when already inside the weekend window", () => {
+    const sat = at("2026-09-26T10:00:00Z");
+    expect(nextAnchorOff(sat).getTime()).toBe(sat.getTime());
+    const sun = at("2026-09-27T10:00:00Z");
+    expect(nextAnchorOff(sun).getTime()).toBe(sun.getTime());
   });
 });

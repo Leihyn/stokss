@@ -6,8 +6,11 @@ import { useEffect, useState } from "react";
  * The hero argument, in one chart.
  *
  * Pyth cannot publish a price the market is not quoting, so the equity feed's
- * publish_time stops at the closing bell. The tokenized share keeps trading
- * against that frozen number for the whole unpriced window.
+ * publish_time stops when quoting stops. NOT at the closing bell: polled at 21:26 UTC,
+ * an hour and a half after the 20:00 bell, Equity.US.SPY/USD was seconds fresh, because
+ * the extended session was still quoting. So this chart anchors on the feed's LAST PRINT,
+ * read from publish_time, rather than on a bell it does not observe. The tokenized share
+ * keeps trading against that frozen number for the whole unpriced window.
  *
  * THE HONESTY RULE OF THIS CHART, which must survive every future edit:
  * exactly TWO points are plotted, and NOTHING is drawn between them. We hold no
@@ -26,6 +29,8 @@ export interface FrozenPrintProps {
   impliedPrice: number;
   /** Hours until the underlying is priced again. */
   unpricedHoursAhead: number;
+  /** When set, the page is rendering at a simulated instant: do not run a live clock. */
+  frozenNow?: number;
   /** ISO timestamp of the next US regular session open. */
   nextRegularOpenAt: string;
   marketOpen: boolean;
@@ -34,7 +39,7 @@ export interface FrozenPrintProps {
 
 /* ── chart domain ─────────────────────────────────────────────────────────
    x is hours since the last print. The regular session is 13:30–20:00 UTC,
-   so the bell sits at 0 and the session opens at −6.5. Padding on both ends
+   so the last print sits at 0 and the session opens at −6.5. Padding on both ends
    keeps the terminus and the next-print rule off the plot edges.          */
 const SESSION_H = 6.5;
 const PAD_LEFT_H = 2;
@@ -81,6 +86,7 @@ export default function FrozenPrint({
   equityAgeSeconds,
   impliedPrice,
   unpricedHoursAhead,
+  frozenNow,
   nextRegularOpenAt,
   marketOpen,
   createRedeemEnabled,
@@ -90,15 +96,19 @@ export default function FrozenPrint({
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   useEffect(() => {
+    // In preview the whole page is rendered at a simulated instant, so a live clock here
+    // counted from the real "now" to the SIMULATED next open and printed 111h against the
+    // 49.5h every other panel showed. When the instant is frozen, so is the countdown.
+    if (frozenNow !== undefined) return;
     const target = new Date(nextRegularOpenAt).getTime();
     const tick = () => setRemainingMs(target - Date.now());
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [nextRegularOpenAt]);
+  }, [nextRegularOpenAt, frozenNow]);
 
   const countdown =
-    remainingMs === null
+    remainingMs === null || frozenNow !== undefined
       ? fmtCountdown(unpricedHoursAhead * 3_600_000)
       : fmtCountdown(remainingMs);
 
@@ -114,8 +124,8 @@ export default function FrozenPrint({
   const px = (h: number) => ((h - xMin) / (xMax - xMin)) * 100;
 
   const X_OPEN = px(-SESSION_H);
-  const X_BELL = px(0);
-  const X_NOW = Math.min(Math.max(px(elapsedH), X_BELL), px(windowH));
+  const X_LAST = px(0);
+  const X_NOW = Math.min(Math.max(px(elapsedH), X_LAST), px(windowH));
   const X_NEXT = px(windowH);
 
   const gap = impliedPrice - equityPrice;
@@ -147,8 +157,8 @@ export default function FrozenPrint({
   const voidInPlot = X_NOW < 44;
   // A short window puts "feed stops" and "next print" on the same pixels, and
   // puts "now" on top of "bell". Both shed their detail rather than collide.
-  const roomForDetail = X_NEXT - X_BELL >= 50;
-  const nowClearOfBell = X_NOW - X_BELL >= 6;
+  const roomForDetail = X_NEXT - X_LAST >= 50;
+  const nowClearOfLast = X_NOW - X_LAST >= 6;
 
   const anchorOff = !createRedeemEnabled;
   const anchorSentence = anchorOff
@@ -157,7 +167,7 @@ export default function FrozenPrint({
 
   const altText =
     `Chart of two measured price points. The Pyth equity feed for SPY published ` +
-    `${usd(equityPrice)} at the closing bell and has not published since; its value is held ` +
+    `${usd(equityPrice)} and has not published since; its value is held ` +
     `flat and its publish time is frozen ${elapsedLabel} ago. The SPYx tokenized share implies ` +
     `${usd(impliedPrice)} right now, ${elapsedLabel} after that last print, a gap of ` +
     `${gapLabel} or ${gapPctLabel}. No price path is drawn between the two points because no ` +
@@ -319,11 +329,11 @@ export default function FrozenPrint({
                   <div className="f-rise absolute inset-0">
                     <span
                       className="absolute top-0 bottom-0 bg-ink-100/[0.022]"
-                      style={{ left: `${X_OPEN}%`, width: `${X_BELL - X_OPEN}%` }}
+                      style={{ left: `${X_OPEN}%`, width: `${X_LAST - X_OPEN}%` }}
                     />
                     <span
                       className="absolute top-0 right-0 bottom-0 bg-shut-400/4"
-                      style={{ left: `${X_BELL}%` }}
+                      style={{ left: `${X_LAST}%` }}
                     />
                     <span
                       className="absolute top-0 bottom-0 bg-shut-400/4"
@@ -343,7 +353,7 @@ export default function FrozenPrint({
                   <div className="f-rise absolute inset-0 [animation-delay:60ms] motion-reduce:[animation-delay:0ms]">
                     <span
                       className="absolute top-0 bottom-0 -ml-px w-0.5 bg-shut-400"
-                      style={{ left: `${X_BELL}%` }}
+                      style={{ left: `${X_LAST}%` }}
                     >
                       <span className="absolute top-0 -left-1 h-[3px] w-2.5 bg-shut-400" />
                       <span className="absolute bottom-0 -left-1 h-[3px] w-2.5 bg-shut-400" />
@@ -353,7 +363,7 @@ export default function FrozenPrint({
                       className="absolute h-0 border-t border-dashed border-shut-400/55"
                       style={{
                         top: `${Y_EQ}%`,
-                        left: `${X_BELL}%`,
+                        left: `${X_LAST}%`,
                         right: `${100 - X_NEXT}%`,
                       }}
                     />
@@ -367,7 +377,7 @@ export default function FrozenPrint({
                   <div className="f-rise absolute inset-0 [animation-delay:120ms] motion-reduce:[animation-delay:0ms]">
                     <span
                       className="absolute h-[11px] w-[11px] -translate-x-1/2 -translate-y-1/2 bg-ink-100 outline-4 outline-base-900"
-                      style={{ left: `${X_BELL}%`, top: `${Y_EQ}%` }}
+                      style={{ left: `${X_LAST}%`, top: `${Y_EQ}%` }}
                     />
                     <span
                       className="absolute h-[13px] w-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-live-400 bg-base-900 outline-[3px] outline-base-900"
@@ -393,18 +403,23 @@ export default function FrozenPrint({
                   <div className="f-rise absolute inset-0 [animation-delay:180ms] motion-reduce:[animation-delay:0ms]">
                     <span
                       className="absolute text-[10px] leading-[1.35] whitespace-nowrap text-ink-300 sm:text-[11px]"
-                      style={{ left: `calc(${X_BELL}% + 8px)`, top: "3%" }}
+                      style={{ left: `calc(${X_LAST}% + 8px)`, top: "3%" }}
                     >
                       <span className="block font-mono text-[9px] leading-[1.2] font-medium tracking-[0.12em] uppercase text-shut-400 sm:text-[10px]">
-                        Feed stops
-                        <span className={roomForDetail ? "hidden md:inline" : "hidden"}> · 20:00:00 UTC</span>
+                        Last publish
+                        <span className={roomForDetail ? "hidden md:inline" : "hidden"}>
+                          {" "}
+                          · {elapsedLabel} ago
+                        </span>
                       </span>
-                      <span className={roomForDetail ? "hidden md:inline" : "hidden"}>no further publish until the bell</span>
+                      <span className={roomForDetail ? "hidden md:inline" : "hidden"}>
+                        held flat until quoting resumes
+                      </span>
                     </span>
 
                     <span
                       className="absolute text-[10px] leading-[1.35] whitespace-nowrap text-ink-300 sm:text-[11px]"
-                      style={{ left: `calc(${X_BELL}% + 8px)`, top: `calc(${Y_EQ}% + 9px)` }}
+                      style={{ left: `calc(${X_LAST}% + 8px)`, top: `calc(${Y_EQ}% + 9px)` }}
                     >
                       <span className="block font-mono text-[9px] leading-[1.2] font-medium tracking-[0.12em] uppercase text-ink-500 sm:text-[10px]">
                         Last print<span className="hidden md:inline">, held</span>
@@ -487,7 +502,7 @@ export default function FrozenPrint({
                   <div className="f-rise absolute inset-0 [animation-delay:240ms] motion-reduce:[animation-delay:0ms]">
                     <span
                       className="absolute bottom-[3%] h-px bg-base-600"
-                      style={{ left: `${X_BELL}%`, width: `${X_NOW - X_BELL}%` }}
+                      style={{ left: `${X_LAST}%`, width: `${X_NOW - X_LAST}%` }}
                     >
                       <span className="absolute -top-1 left-0 h-[9px] w-px bg-base-600" />
                       <span className="absolute -top-1 right-0 h-[9px] w-px bg-base-600" />
@@ -501,7 +516,7 @@ export default function FrozenPrint({
                     </span>
                     <span
                       className="tnum absolute bottom-[3%] translate-x-[-50%] translate-y-1/2 bg-base-900 px-2 font-mono text-[10px] leading-none font-medium tracking-[0.09em] uppercase whitespace-nowrap text-ink-500"
-                      style={{ left: `${(X_BELL + X_NOW) / 2}%` }}
+                      style={{ left: `${(X_LAST + X_NOW) / 2}%` }}
                     >
                       {elapsedLabel} elapsed<span className="hidden md:inline">, unpriced</span>
                     </span>
@@ -519,7 +534,7 @@ export default function FrozenPrint({
                   className="absolute right-[14px] bottom-0 left-0 h-[46px] border-t border-base-700"
                   aria-hidden="true"
                 >
-                  {[X_OPEN, X_BELL, X_NOW, X_NEXT].map((x, i) => (
+                  {[X_OPEN, X_LAST, X_NOW, X_NEXT].map((x, i) => (
                     <span
                       key={i}
                       className="absolute top-0 h-1.5 w-px bg-base-600"
@@ -528,7 +543,7 @@ export default function FrozenPrint({
                   ))}
                   <span
                     className="absolute top-[30px] hidden h-[5px] border border-t-0 border-base-600 xl:block"
-                    style={{ left: `${X_OPEN}%`, width: `${X_BELL - X_OPEN}%` }}
+                    style={{ left: `${X_OPEN}%`, width: `${X_LAST - X_OPEN}%` }}
                   />
                   <span
                     className="tnum absolute top-[11px] hidden font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px] xl:block"
@@ -539,12 +554,12 @@ export default function FrozenPrint({
                   </span>
                   <span
                     className={`tnum absolute top-[11px] -translate-x-1/2 font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px] ${
-                      nowClearOfBell ? "" : "hidden"
+                      nowClearOfLast ? "" : "hidden"
                     }`}
-                    style={{ left: `${X_BELL}%` }}
+                    style={{ left: `${X_LAST}%` }}
                   >
                     20:00
-                    <b className="block font-medium text-ink-300">bell</b>
+                    <b className="block font-medium text-ink-300">last print</b>
                   </span>
                   <span
                     className="tnum absolute top-[11px] -translate-x-1/2 font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px]"
@@ -587,7 +602,7 @@ export default function FrozenPrint({
               </p>
               <p className="max-w-[96ch] text-[12px] leading-[1.55] text-ink-500">
                 <strong className="font-semibold text-ink-300">How to read this.</strong> Only two
-                points on this chart were measured: the Pyth equity print at the bell, and the SPYx
+                points on this chart were measured: the Pyth equity feed&rsquo;s last print, and the SPYx
                 implied price right now.{" "}
                 <strong className="font-semibold text-ink-300">
                   No path is drawn between them

@@ -59,7 +59,12 @@
 /* next/font emits --font-mono; alias it so @theme can compose it. */
 :root { --font-mono-jb: var(--font-mono); --nav-h: 64px; --gutter: clamp(18px, 4vw, 56px); }
 
-html { color-scheme: dark; }
+html {
+  color-scheme: dark;
+  /* Both pages carry a sticky 4rem nav. Without this, any anchor jump or focus scroll
+     parks the target underneath it — the "No wallet?" control was landing half-hidden. */
+  scroll-padding-top: 4.5rem;
+}
 
 body {
   background: var(--color-base-950);

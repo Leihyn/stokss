@@ -17,6 +17,8 @@ import { useSyncExternalStore } from "react";
 interface WeekGridProps {
   marketOpen: boolean; // from the live issuer feed
   period?: string | null; // "market" | "extended" | "overnight" | "closed"
+  /** When set, the page is rendering at a simulated instant rather than the live clock. */
+  frozenNow?: number;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
@@ -82,8 +84,11 @@ function subscribeToClock(onChange: () => void): () => void {
 const readClock = () => clockSnapshot;
 const readClockOnServer = () => null;
 
-export default function WeekGrid({ marketOpen, period }: WeekGridProps) {
-  const nowMs = useSyncExternalStore(subscribeToClock, readClock, readClockOnServer);
+export default function WeekGrid({ marketOpen, period, frozenNow }: WeekGridProps) {
+  const liveMs = useSyncExternalStore(subscribeToClock, readClock, readClockOnServer);
+  // The preview renders the whole page at a simulated instant; the grid must agree with it
+  // rather than highlighting the real current hour on a Saturday preview.
+  const nowMs = frozenNow ?? liveMs;
   const now = nowMs === null ? null : new Date(nowMs);
 
   // getUTCDay is 0=Sunday; this grid begins on Monday.
@@ -211,7 +216,9 @@ export default function WeekGrid({ marketOpen, period }: WeekGridProps) {
             className={`tnum font-mono text-value ${marketOpen ? "text-open-400" : "text-shut-400"}`}
           >
             {marketOpen ? "Open" : "Closed"}
-            {period ? (
+            {/* The issuer's period is extra information only when it differs from the
+                state word; "Closed closed" is noise. */}
+            {period && period !== (marketOpen ? "market" : "closed") ? (
               <span className="ml-2 font-sans text-micro uppercase text-ink-500">{period}</span>
             ) : null}
           </dd>

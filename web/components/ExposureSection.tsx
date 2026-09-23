@@ -15,9 +15,12 @@ const usd = (n: number) =>
 export default function ExposureSection({
   unpricedHoursAhead,
   marketOpen,
+  anchorState,
 }: {
   unpricedHoursAhead: number;
   marketOpen: boolean;
+  /** From the issuer's published limits. "off" is the only state with no arbitrage at all. */
+  anchorState: "full" | "reduced" | "off";
 }) {
   const live = exposure.pools.filter((p) => p.positions > 0).sort((a, b) => b.positions - a.positions);
   const shown = live.slice(0, 10);
@@ -31,8 +34,8 @@ export default function ExposureSection({
         02 / the crowd · measured on chain
       </p>
       <h2 id="exposure-h" className="max-w-3xl text-display font-semibold">
-        <span className="tnum">{exposure.totalPositions.toLocaleString()}</span> positions are
-        standing in the dark.
+        <span className="tnum">{exposure.totalPositions.toLocaleString()}</span> positions
+        {anchorState === "off" ? " are standing in the dark." : " will stand in the dark."}
       </h2>
       <p className="mt-5 max-w-2xl text-read text-ink-300">
         Every bar below is a real Raydium CLMM pool holding tokenized equity, sized by how many
@@ -45,8 +48,12 @@ export default function ExposureSection({
             <span className="tnum font-mono text-shut-400">
               {unpricedHoursAhead.toFixed(1)} hours
             </span>{" "}
-            nobody can price what any of them are holding, and the issuer will not create or
-            redeem.
+            nobody can price what any of them are holding
+            {anchorState === "off"
+              ? ", and the issuer will not create or redeem at all."
+              : anchorState === "reduced"
+                ? ", though the issuer is still creating and redeeming at a reduced cap."
+                : ", though the issuer is still creating and redeeming at its full cap."}
           </>
         )}
         {marketOpen && "."}

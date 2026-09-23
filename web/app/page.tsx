@@ -1,8 +1,11 @@
+import Link from "next/link";
 import data from "@/data/measurements.json";
+import Hero from "@/components/Hero";
 import FrozenPrint from "@/components/FrozenPrint";
+import PricedNow from "@/components/PricedNow";
 import WeekGrid from "@/components/WeekGrid";
 import ExposureSection from "@/components/ExposureSection";
-import { fetchSession } from "@/lib/session";
+import { fetchSession, nextRegularOpen, nextAnchorOff } from "@/lib/session";
 import { fetchImpliedPrice } from "@/lib/implied";
 import { readEquityPrice } from "@/lib/pyth";
 
@@ -27,12 +30,61 @@ function Meter({ pct, open }: { pct: number; open: boolean }) {
   );
 }
 
-export default async function Home() {
-  const [session, implied, equity] = await Promise.all([
+/**
+ * The page argues about the hours nobody can price these assets, and for most of the
+ * working week it cannot show them: visit on a Thursday afternoon and every panel
+ * correctly reports that arbitrage is working. `?dark=1` moves the CLOCK to the next
+ * measured anchor-off window and renders the same components against it.
+ *
+ * Nothing else is simulated. The prices, the 2,777 positions, the 42.1-hour observed
+ * window and the issuer's own limit schedule are the live measured values. The banner
+ * says so on screen, because a page whose whole claim is "every number here is real"
+ * cannot quietly move one of them.
+ */
+function simulateDark(session: Awaited<ReturnType<typeof fetchSession>>) {
+  const at = darkInstant(); // midday Saturday, deep inside the window
+  const open = nextRegularOpen(at);
+  const ahead = (open.getTime() - at.getTime()) / 3_600_000;
+  return {
+    ...session,
+    period: "closed" as const,
+    openNow: false,
+    regularSession: false,
+    createRedeemEnabled: false,
+    maxOrderFiatValue: 0,
+    anchorState: "off" as const,
+    hoursUntilClose: 0,
+    hoursUntilAnchorOff: 0,
+    unpricedHoursAhead: ahead,
+    darkWindowHours: ahead,
+    // Without this the chart's "next print" marker kept the LIVE next open (Thursday)
+    // while every other figure counted to Monday.
+    nextRegularOpenAt: open.toISOString(),
+    sessionCloseAt: null,
+    nextAnchorOffAt: at.toISOString(),
+  };
+}
+
+/** The instant `?dark=1` renders at: midday on the next measured anchor-off Saturday. */
+function darkInstant(): Date {
+  const at = new Date(nextAnchorOff(new Date()));
+  at.setUTCHours(12, 0, 0, 0);
+  return at;
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ dark }, live, implied, equity] = await Promise.all([
+    searchParams,
     fetchSession("SPYx"),
     fetchImpliedPrice(RPC),
     readEquityPrice(RPC, "SPY").catch(() => null),
   ]);
+  const preview = dark === "1";
+  const session = preview ? simulateDark(live) : live;
   const { sessions, liquidity, issuerControl } = data;
 
   /**
@@ -40,11 +92,29 @@ export default async function Home() {
    * and is already rendered on the page, so the hero's claim is self-evidencing rather than
    * inferred from a session calendar. An hour of tolerance covers normal publish cadence.
    */
-  const equityAge = equity?.ageSeconds ?? 68_400;
+  const liveAge = equity?.ageSeconds ?? 68_400;
+  const equityPrice = equity?.price ?? 762.96;
+  // In preview the last print is the one before the weekend, i.e. 12h back at Saturday noon.
+  const equityAge = preview ? 12 * 3_600 : liveAge;
   const feedStale = equityAge > 3_600;
 
   return (
     <>
+      {preview && (
+        <p className="border-b border-shut-400/35 bg-shut-900/60 px-(--gutter) py-2.5 text-body text-shut-400">
+          <b className="font-semibold">Preview.</b> The clock is moved to{" "}
+          <span className="tnum font-mono">
+            {darkInstant().toUTCString().slice(0, 22)} UTC
+          </span>
+          , inside the next measured anchor-off window. Every other figure on this page is
+          the live measured value.{" "}
+          <Link className="underline hover:text-ink-100" href="/">
+            Back to live
+          </Link>
+          .
+        </p>
+      )}
+
       <nav className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-base-800 bg-base-950/95 px-(--gutter)">
         <span className="flex items-center gap-2.5 font-sans text-read font-semibold tracking-tight">
           <span
@@ -62,42 +132,46 @@ export default async function Home() {
       </nav>
 
       <main id="main">
-        {/* The frozen-print chart argues from a SHUT market: two prints and the dead space
-            between them. With the market open that window is zero-length, the two markers
-            coincide and the argument weakens. So when the market is open the week grid leads
-            instead — it makes the same case in either state, because 32.5 of 168 is the point.
-            Judging runs through 2 Oct, so the open state will be seen. */}
-        {!feedStale ? (
-          <>
-            <WeekGrid marketOpen={!feedStale} period={session.period} />
-            <FrozenPrint
-              equityPrice={equity?.price ?? 762.96}
-              equityAgeSeconds={equity?.ageSeconds ?? 68_400}
-              impliedPrice={implied.impliedSharePrice}
-              unpricedHoursAhead={session.unpricedHoursAhead}
-              nextRegularOpenAt={session.nextRegularOpenAt}
-              marketOpen={!feedStale}
-              createRedeemEnabled={session.createRedeemEnabled}
-            />
-          </>
+        <Hero session={session} />
+
+        {/* The divergence chart needs a COMPLETED gap. During the session that gap is zero,
+            the markers collapse onto one x position and its annotations go false. So the
+            chart renders only when the feed has actually stopped; while it is live, a panel
+            states what is true and counts down to the window worth plotting. */}
+        {feedStale ? (
+          <FrozenPrint
+            equityPrice={equityPrice}
+            equityAgeSeconds={equityAge}
+            impliedPrice={implied.impliedSharePrice}
+            unpricedHoursAhead={session.unpricedHoursAhead}
+            nextRegularOpenAt={session.nextRegularOpenAt}
+            marketOpen={false}
+            createRedeemEnabled={session.createRedeemEnabled}
+            frozenNow={preview ? darkInstant().getTime() : undefined}
+          />
         ) : (
-          <>
-            <FrozenPrint
-              equityPrice={equity?.price ?? 762.96}
-              equityAgeSeconds={equity?.ageSeconds ?? 68_400}
-              impliedPrice={implied.impliedSharePrice}
-              unpricedHoursAhead={session.unpricedHoursAhead}
-              nextRegularOpenAt={session.nextRegularOpenAt}
-              marketOpen={!feedStale}
-              createRedeemEnabled={session.createRedeemEnabled}
-            />
-            <WeekGrid marketOpen={!feedStale} period={session.period} />
-          </>
+          <PricedNow
+            equityPrice={equityPrice}
+            equityAgeSeconds={equityAge}
+            impliedPrice={implied.impliedSharePrice}
+            session={session}
+          />
         )}
 
+        <WeekGrid
+          marketOpen={session.regularSession}
+          period={session.period}
+          frozenNow={preview ? darkInstant().getTime() : undefined}
+        />
+
+        {/* marketOpen is the US REGULAR session. It was wired to !feedStale, i.e. Pyth
+            freshness, which put "The US market is open" directly above the week grid's
+            "Market state: Closed" at 21:00 UTC. The feed keeps publishing through the
+            extended session; the market does not. */}
         <ExposureSection
           unpricedHoursAhead={session.unpricedHoursAhead}
-          marketOpen={!feedStale}
+          marketOpen={session.regularSession}
+          anchorState={session.anchorState}
         />
 
         <section

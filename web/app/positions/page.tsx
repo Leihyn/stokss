@@ -93,9 +93,13 @@ export default async function PositionsPage() {
             ))}
           </dl>
           <p className="mt-6 max-w-2xl text-body text-ink-500">
-            One honest limit: the withdrawal sets <span className="font-mono">amountMin</span> to
-            zero, so it accepts any output amount. That is acceptable for a full exit you inspect
-            before signing and wrong for anything automated. Preview is how you inspect it.
+            The exit carries a real slippage floor. Its{" "}
+            <span className="font-mono">amountMinA</span> and{" "}
+            <span className="font-mono">amountMinB</span> are derived from the position&rsquo;s own
+            tick range, 50bps under its value at the pool&rsquo;s current price, so a pool moved
+            either side of your signature reverts the transaction instead of settling at whatever
+            it finds. Verified by decoding the built instruction: both minimums are non-zero on
+            the wire.
           </p>
         </section>
       </main>

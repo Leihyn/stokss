@@ -19,8 +19,12 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Closing Bell",
+  // State-neutral on purpose. This string is the link preview a judge sees, and it is served
+  // identically whether the market is open or shut. The previous copy asserted "The feed
+  // stopped", which is false for the 32.5 hours a week it has not — the page itself switches
+  // on measured state, and its metadata should not contradict it.
   description:
-    "The feed stopped. The token didn't. Most tokenized stock on Solana trades while the US equity market is closed and nothing anchors the price.",
+    "Tokenized stocks trade 168 hours a week. The US market prices them 32.5. Closing Bell warns xStocks liquidity providers before the hours nobody can price their position, and hands them a non-custodial exit they sign themselves.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

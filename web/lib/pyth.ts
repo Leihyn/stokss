@@ -7,9 +7,11 @@ import { Connection, PublicKey } from "@solana/web3.js";
  * directly is the Solana-native path anyway.
  *
  * What makes this load-bearing rather than decorative: an equity feed's `publish_time`
- * STOPS AT THE CLOSING BELL. Pyth itself is the authority for "the underlying has no
- * current price", and the age of that last print is exactly the exposure window Closing
- * Bell exists to warn about.
+ * STOPS WHEN THE UNDERLYING STOPS QUOTING. Not at the closing bell — polled at 21:26 UTC,
+ * 86 minutes after the 20:00 bell, Equity.US.SPY/USD was seconds fresh, because the
+ * extended session was still quoting. Pyth itself is therefore the authority for "the
+ * underlying has no current price", and the age of that last print is exactly the exposure
+ * window Closing Bell exists to warn about. Measured, not assumed from a calendar.
  *
  * PriceUpdateV2 layout, verified against live accounts:
  *   0   discriminator (8)

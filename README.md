@@ -1,6 +1,10 @@
 # Closing Bell
 
-**Live: https://closing-bell-solana.vercel.app** — reading mainnet right now. The page changes
+**Live: https://closing-bell-solana.vercel.app** — reading mainnet right now.
+**[Demo, 84s](https://closing-bell-solana.vercel.app/demo)** ·
+**[Technical walkthrough, 102s](https://closing-bell-solana.vercel.app/technical)** — the
+on-chain Pyth read, the Scaled UI multiplier division, the measured anchor model and the
+tick-derived slippage floor, each with the source on screen. The page changes
 with the clock: during the US session it shows the anchor holding, and counts down to the
 weekend window where the issuer sets create/redeem to zero. To see that state at any time,
 append `?dark=1` — it moves the clock and nothing else, and says so on screen.

@@ -98,7 +98,8 @@ export default function TechnicalPage() {
       </h1>
       <p className="mt-5 max-w-2xl text-read text-ink-300">
         A demo shows that something works. It cannot show whether the integration underneath
-        is real. This page is the part a judge cannot see from the interface.{" "}
+        is real. The two claims you cannot check by reading are executed in the recording
+        below; the other three have their source on this page.{" "}
         <Link className="text-shut-400 underline underline-offset-4" href="/demo">
           The 84-second demo is here.
         </Link>
@@ -116,9 +117,12 @@ export default function TechnicalPage() {
           Download the walkthrough
         </a>
       </video>
-      <p className="mt-3 text-body text-ink-500">
-        102 seconds, walking the same five claims below. Everything it shows is in this
-        repository and can be re-run.
+      <p className="mt-3 max-w-3xl text-body text-ink-500">
+        49 seconds, and nothing in it is pasted. It runs{" "}
+        <span className="font-mono text-ink-300">node crank/prove-anchor.mjs</span> and{" "}
+        <span className="font-mono text-ink-300">npm run prove</span> on a real machine
+        against mainnet, and shows the output arriving. Both commands are in this repository
+        &mdash; the figures will differ from the recording, because the pool moves.
       </p>
 
       <ol className="mt-12 space-y-10">

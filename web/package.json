@@ -9,7 +9,8 @@
     "lint": "eslint app lib components",
     "test": "vitest run",
     "check": "npm run lint && npm run build && npm test",
-    "shot": "node scripts/shot.mjs"
+    "shot": "node scripts/shot.mjs",
+    "prove": "PROVE_LIVE=1 vitest run lib/__tests__/prove-floor.test.ts"
   },
   "dependencies": {
     "@raydium-io/raydium-sdk-v2": "^0.2.71-alpha",

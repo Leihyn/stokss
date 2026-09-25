@@ -1,3 +1,10 @@
+> **This describes an earlier direction, not what was built.**
+> This repo shipped **Closing Bell**, which warns tokenized-equity liquidity providers before
+> the hours nobody can price their position and hands them a non-custodial exit. The document
+> below specifies *stokss*, a dividend harvester for Scaled UI Amount tokens, which was
+> abandoned. It is kept because the Scaled UI Amount research in it is real and the Anchor
+> program in `programs/` still builds against it. **Start at [README.md](README.md).**
+
 # stokss: Implementation Plan
 
 **Version:** 1.0

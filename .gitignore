@@ -13,3 +13,25 @@ crank-state.json.tmp
 crank/.env
 crank/population-scan.out
 *.log
+
+# Agent-pipeline scaffolding. Useful on disk, actively misleading in a public repo:
+# these are state machines, gate scores and hackathon strategy notes for an earlier
+# direction, and a reader who opens them lands in a different project than the README
+# describes. Untracked 2026-09-25, kept locally.
+.conductor-resume.md
+.conductor-state.json
+.conductor-state.json.bak
+.critique-state.json
+.crossmodel-events.jsonl
+.crossmodel-gate/
+.forge-state.json
+.url-preverify.json
+.verify-state.json
+intel-state.json
+pipeline-log.md
+PULSE.md
+concerns.md
+FEATURE-OBSERVABLES.md
+SUBMISSION-CHECKLIST.md
+VERIFY-REPORT.md
+warroom/

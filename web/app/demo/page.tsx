@@ -10,16 +10,16 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Closing Bell — demo",
   description:
-    "78-second walkthrough: live Pyth equity data, the 168-hour week, the weekend window where nothing prices these assets, and a non-custodial exit.",
+    "84-second walkthrough: live Pyth equity data, the 168-hour week, the weekend window where nothing prices these assets, and a non-custodial exit.",
 };
 
 export default function DemoPage() {
   return (
     <main id="main" className="mx-auto max-w-4xl px-(--gutter) py-14 sm:py-20">
       <p className="mb-4 font-mono text-micro uppercase text-shut-400">
-        demo · 78 seconds · recorded from the live site
+        demo · 84 seconds · recorded from the live site
       </p>
-      <h1 className="max-w-2xl text-display font-semibold">Closing Bell, in 78 seconds.</h1>
+      <h1 className="max-w-2xl text-display font-semibold">Closing Bell, in 84 seconds.</h1>
       <p className="mt-5 max-w-2xl text-read text-ink-300">
         Everything on screen is the deployed application reading mainnet. The only thing
         simulated is the clock, in the segment that says so on screen.
@@ -42,9 +42,9 @@ export default function DemoPage() {
 
       <dl className="mt-10 grid gap-x-10 gap-y-6 sm:grid-cols-3">
         {[
-          ["0:00", "Live Pyth SPY feed against the SPYx implied share price"],
-          ["0:27", "The 168-hour week, 32.5 hours of it priced"],
-          ["0:45", "The weekend window, with the simulated-clock banner on screen"],
+          ["0:19", "The 168-hour week, 32.5 hours of it priced"],
+          ["0:35", "Weekend movement exceeding trading-hours movement"],
+          ["1:11", "The exit simulated against live mainnet, nothing broadcast"],
         ].map(([t, l]) => (
           <div key={l}>
             <dd className="tnum font-mono text-[1.5rem] font-semibold leading-none text-ink-100">

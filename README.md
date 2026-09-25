@@ -1,5 +1,10 @@
 # Closing Bell
 
+**Live: https://closing-bell-solana.vercel.app** — reading mainnet right now. The page changes
+with the clock: during the US session it shows the anchor holding, and counts down to the
+weekend window where the issuer sets create/redeem to zero. To see that state at any time,
+append `?dark=1` — it moves the clock and nothing else, and says so on screen.
+
 Coca-Cola cannot move on a Saturday. The New York Stock Exchange is shut, no trade prints,
 no price exists.
 

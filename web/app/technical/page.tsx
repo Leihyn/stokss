@@ -104,6 +104,23 @@ export default function TechnicalPage() {
         </Link>
       </p>
 
+      <video
+        className="mt-10 w-full rounded-card border border-base-700"
+        controls
+        playsInline
+        preload="metadata"
+        poster="/technical-poster.jpg"
+      >
+        <source src="/technical.mp4" type="video/mp4" />
+        <a className="underline" href="/technical.mp4">
+          Download the walkthrough
+        </a>
+      </video>
+      <p className="mt-3 text-body text-ink-500">
+        102 seconds, walking the same five claims below. Everything it shows is in this
+        repository and can be re-run.
+      </p>
+
       <ol className="mt-12 space-y-10">
         {CLAIMS.map((c) => (
           <li key={c.n} className="border-t border-base-800 pt-6">

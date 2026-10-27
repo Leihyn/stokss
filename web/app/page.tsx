@@ -341,6 +341,12 @@ export default async function Home({
             and nothing is drawn that was not observed. Session and volatility data measured{" "}
             {data.measuredAt}. {data.coverage}
           </p>
+          <p className="mt-4">
+            Built by{" "}
+            <a href="https://x.com/faruukku" rel="me" className="text-ink-300 underline underline-offset-4">
+              @faruukku
+            </a>
+          </p>
         </footer>
       </main>
     </>

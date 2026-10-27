@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   // on measured state, and its metadata should not contradict it.
   description:
     "Tokenized stocks trade 168 hours a week. The US market prices them 32.5. Closing Bell warns xStocks liquidity providers before the hours nobody can price their position, and hands them a non-custodial exit they sign themselves.",
+  twitter: { creator: "@faruukku" },
+  other: { "ory-verify": "PASTE_CLOSINGBELL_TOKEN_HERE" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

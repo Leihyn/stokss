@@ -13,12 +13,7 @@ import {
   type SimulatedWithdrawal,
 } from "@/lib/withdraw";
 
-/**
- * A real liquidity provider in the SPYx/USDC pool, resolved on chain via
- * position NFT -> largest token account -> owner. Offered so the page is usable
- * by someone with no wallet and no position, which is every judge.
- */
-const EXAMPLE_OWNER = "bygBkeZNTWKxBpkF8CRJYm9DkCMTf6e4xErQnYPqVmQ";
+import { findExampleOwner } from "@/lib/example-owner";
 
 const rpcUrl = () =>
   typeof window === "undefined"
@@ -185,9 +180,19 @@ export default function Positions() {
 
         {!usingWallet && (
           <button
-            onClick={() => {
-              setAddr(EXAMPLE_OWNER);
-              run(new PublicKey(EXAMPLE_OWNER));
+            onClick={async () => {
+              // Offered so the page is usable with no wallet and no position. Resolved live:
+              // a hardcoded provider went stale once they left the pool.
+              setBusy(true);
+              setStatus("finding a live liquidity provider in SPYx/USDC…");
+              try {
+                const owner = await findExampleOwner(rpcUrl());
+                setAddr(owner.toBase58());
+                await run(owner);
+              } catch (e) {
+                setStatus("error: " + (e as Error).message);
+                setBusy(false);
+              }
             }}
             disabled={busy}
             className="mt-3 text-body text-shut-400 underline decoration-shut-400/30 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-shut-400 disabled:opacity-40"

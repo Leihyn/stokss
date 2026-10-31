@@ -8,6 +8,7 @@ import ExposureSection from "@/components/ExposureSection";
 import { fetchSession, nextRegularOpen, nextAnchorOff } from "@/lib/session";
 import { fetchImpliedPrice } from "@/lib/implied";
 import { readEquityPrice } from "@/lib/pyth";
+import FeedDown, { FEED_DOWN_AFTER_SECONDS } from "@/components/FeedDown";
 
 export const revalidate = 60;
 
@@ -97,6 +98,8 @@ export default async function Home({
   // In preview the last print is the one before the weekend, i.e. 12h back at Saturday noon.
   const equityAge = preview ? 12 * 3_600 : liveAge;
   const feedStale = equityAge > 3_600;
+  // A feed older than a long weekend is down, not closed; preview or not, its price is no close.
+  const feedDown = !equity || liveAge > FEED_DOWN_AFTER_SECONDS;
 
   return (
     <>
@@ -138,7 +141,14 @@ export default async function Home({
             the markers collapse onto one x position and its annotations go false. So the
             chart renders only when the feed has actually stopped; while it is live, a panel
             states what is true and counts down to the window worth plotting. */}
-        {feedStale ? (
+        {feedDown ? (
+          <FeedDown
+            equityPrice={equity?.price ?? null}
+            publishTime={equity?.publishTime ?? null}
+            ageSeconds={equity?.ageSeconds ?? null}
+            impliedPrice={implied.impliedSharePrice}
+          />
+        ) : feedStale ? (
           <FrozenPrint
             equityPrice={equityPrice}
             equityAgeSeconds={equityAge}

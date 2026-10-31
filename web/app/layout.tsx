@@ -25,7 +25,14 @@ export const metadata: Metadata = {
   // on measured state, and its metadata should not contradict it.
   description:
     "Tokenized stocks trade 168 hours a week. The US market prices them 32.5. Closing Bell warns xStocks liquidity providers before the hours nobody can price their position, and hands them a non-custodial exit they sign themselves.",
-  twitter: { creator: "@faruukku" },
+  // Absolute image URLs in the preview tags need a base; the custom domain replaces this once attached.
+  metadataBase: new URL("https://closing-bell-solana.vercel.app"),
+  openGraph: {
+    title: "Closing Bell",
+    description: "Tokenized stocks trade 168 hours a week. The US market prices them 32.5. Closing Bell warns xStocks liquidity providers before the hours nobody can price their position.",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", creator: "@faruukku" },
   other: { "ory-verify": "PASTE_CLOSINGBELL_TOKEN_HERE" },
 };
 

@@ -159,6 +159,10 @@ export default function FrozenPrint({
   // puts "now" on top of "bell". Both shed their detail rather than collide.
   const roomForDetail = X_NEXT - X_LAST >= 50;
   const nowClearOfLast = X_NOW - X_LAST >= 6;
+  // The same rule for the other two label pairs: over a long window "13:30 open" ran into
+  // "20:00 last print" and "now" into "next open". Percent of plot width; labels are ~60-80px.
+  const openClearOfLast = X_LAST - X_OPEN >= 8;
+  const nowClearOfNext = X_NEXT - X_NOW >= 12;
 
   const anchorOff = !createRedeemEnabled;
   const anchorSentence = anchorOff
@@ -546,7 +550,7 @@ export default function FrozenPrint({
                     style={{ left: `${X_OPEN}%`, width: `${X_LAST - X_OPEN}%` }}
                   />
                   <span
-                    className="tnum absolute top-[11px] hidden font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px] xl:block"
+                    className={`tnum absolute top-[11px] hidden font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px] ${openClearOfLast ? "xl:block" : ""}`}
                     style={{ left: `${X_OPEN}%` }}
                   >
                     13:30
@@ -562,7 +566,7 @@ export default function FrozenPrint({
                     <b className="block font-medium text-ink-300">last print</b>
                   </span>
                   <span
-                    className="tnum absolute top-[11px] -translate-x-1/2 font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px]"
+                    className={`tnum absolute top-[11px] -translate-x-1/2 font-mono text-[9px] leading-[1.3] font-medium tracking-[0.06em] uppercase whitespace-nowrap text-ink-500 sm:text-[10px] ${nowClearOfNext ? "" : "hidden"}`}
                     style={{ left: `${X_NOW}%` }}
                   >
                     +{elapsedLabel}
